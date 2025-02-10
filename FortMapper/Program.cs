@@ -8,6 +8,7 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Assets.Exports.Texture;
+using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Core.Misc;
 using CUE4Parse.UE4.Objects.Engine;
@@ -53,21 +54,40 @@ static class MainClass
         provider.SubmitKey(new FGuid(), new FAesKey("0x4940113FFF51E90CA7C9633AA84BC8075ADC90C71EFC0D1E8FCBD1A9CAADFC91"));
 
         Dictionary<string, int> missedActors = new();
-
         List<FVector> Chests = new();
+        List<KeyValuePair<string, FVector>> POIs = new();
+
         foreach (var file in provider.Files)
         {
-            if (!file.Key.StartsWith("fortnitegame/plugins/gamefeatures/brmapch6/content/maps/hermes_terrain/_generated_/") || !file.Key.EndsWith(".umap"))
+            if (!file.Key.Contains(/*fortnitegame/plugins/gamefeatures/brmapch6/content/maps*/"/hermes_terrain/_generated_/") || !file.Key.EndsWith(".umap"))
                 continue;
 
             var lvl = provider.LoadObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
 
+            string[] thingstosearchfor = new string[]
+            {
+                    "FortPoiVolume",
+                    "Chest"
+            };
+
             var objs = lvl.Actors;
             foreach (var packageindex in objs)
             {
-                if (packageindex.IsNull || !packageindex.Name.Contains("Chest") || !packageindex.TryLoad(out AActor actor) || actor is null)
+                if (packageindex.IsNull) continue;
+                bool parseIt = false;
+                foreach (var thing in thingstosearchfor)
+                {
+                    if (packageindex.Name.Contains(thing))
+                    {
+                        parseIt = true;
+                        break;
+                    }
+                }
+
+                if (!parseIt || !packageindex.TryLoad(out AActor actor) || actor is null)
                 {
                     var parsedName = packageindex.Name.Split("_UAID_")[0];
+
                     if (missedActors.ContainsKey(parsedName))
                         missedActors[parsedName]++;
                     else
@@ -75,7 +95,31 @@ static class MainClass
                     continue;
                 }
 
-                Chests.Add(actor.GetActorLocation());
+                if (packageindex.Name.Contains("FortPoiVolume"))
+                {
+                    // Console.WriteLine("FortPoiVolume in " + lvl.Owner?.Name);
+                    if (!actor.TryGetValue(out UObject[] components, "InstanceComponents") ||
+                        components.Length <= 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (var component in components)
+                    {
+                        if (component.ExportType == "FortPoi_DiscoverableComponent")
+                        {
+                            if (!component.TryGetValue(out FText PlayerFacingName, "PlayerFacingName") ||
+                                !component.TryGetValue(out int DiscoverMinimapBitId, "DiscoverMinimapBitId"))
+                                continue;
+
+                            POIs.Add(new (PlayerFacingName.Text, actor.GetActorLocation()));
+                        }
+                    }
+                }
+                else
+                {
+                    Chests.Add(actor.GetActorLocation());
+                }
             }
         }
 
@@ -89,11 +133,27 @@ static class MainClass
                 Style = SKPaintStyle.Fill,
                 StrokeWidth = 8
             };
+            
+            var textpaint = new SKPaint
+            {
+                Color = SKColors.Coral,
+                IsAntialias = true,
+                Style = SKPaintStyle.Fill,
+                StrokeWidth = 18
+            };
 
+            var font = SKTypeface.FromFamilyName("Arial").ToFont();
+            font.Embolden = true;
+            
             foreach (var pos in Chests)
             {
                 var mappos = GetMapPos(pos);
                 canvas.DrawCircle(mappos.X, mappos.Y, 2.5f, paint);
+            }
+            foreach (var poi in POIs)
+            {
+                var mappos = GetMapPos(poi.Value);
+                canvas.DrawText(poi.Key, mappos.X, mappos.Y, SKTextAlign.Center, font, textpaint);
             }
 
             using (var image = SKImage.FromBitmap(bmp))
