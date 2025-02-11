@@ -13,8 +13,10 @@ using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Core.Misc;
 using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Versions;
+using CUE4Parse.UE4.VirtualFileSystem;
 using CUE4Parse.Utils;
 using CUE4Parse_Conversion.Textures;
+using FortMapper;
 using Newtonsoft.Json;
 using SkiaSharp;
 
@@ -34,6 +36,7 @@ public static class ActorExtension
 
 static class MainClass
 {
+    // I want to make this whole program interactive later on, but for now its just console program cus i suck at GUI
     static void Main(string[] args)
     {
         if (!File.Exists("oo2core_9_win64.dll"))
@@ -47,157 +50,16 @@ static class MainClass
             return;
         }
         OodleHelper.Initialize("oo2core_9_win64.dll");
-
+        
         var provider = new DefaultFileProvider(@"C:\Program Files\Epic Games\Fortnite\FortniteGame\Content\Paks", SearchOption.TopDirectoryOnly, true, new VersionContainer(EGame.GAME_UE5_LATEST));
+
         provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
         provider.Initialize();
         provider.SubmitKey(new FGuid(), new FAesKey("0x4940113FFF51E90CA7C9633AA84BC8075ADC90C71EFC0D1E8FCBD1A9CAADFC91"));
 
-        Dictionary<string, int> missedActors = new();
-        List<FVector> Chests = new();
-        List<KeyValuePair<string, FVector>> POIs = new();
-
-        foreach (var file in provider.Files)
-        {
-            if (!file.Key.Contains(/*fortnitegame/plugins/gamefeatures/brmapch6/content/maps*/"/hermes_terrain/_generated_/") || !file.Key.EndsWith(".umap"))
-                continue;
-
-            var lvl = provider.LoadObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
-
-            string[] thingstosearchfor = new string[]
-            {
-                    "FortPoiVolume",
-                    "Chest"
-            };
-
-            var objs = lvl.Actors;
-            foreach (var packageindex in objs)
-            {
-                if (packageindex.IsNull) continue;
-                bool parseIt = false;
-                foreach (var thing in thingstosearchfor)
-                {
-                    if (packageindex.Name.Contains(thing))
-                    {
-                        parseIt = true;
-                        break;
-                    }
-                }
-
-                if (!parseIt || !packageindex.TryLoad(out AActor actor) || actor is null)
-                {
-                    var parsedName = packageindex.Name.Split("_UAID_")[0];
-
-                    if (missedActors.ContainsKey(parsedName))
-                        missedActors[parsedName]++;
-                    else
-                        missedActors[parsedName] = 1;
-                    continue;
-                }
-
-                if (packageindex.Name.Contains("FortPoiVolume"))
-                {
-                    // Console.WriteLine("FortPoiVolume in " + lvl.Owner?.Name);
-                    if (!actor.TryGetValue(out UObject[] components, "InstanceComponents") ||
-                        components.Length <= 0)
-                    {
-                        continue;
-                    }
-
-                    foreach (var component in components)
-                    {
-                        if (component.ExportType == "FortPoi_DiscoverableComponent")
-                        {
-                            if (!component.TryGetValue(out FText PlayerFacingName, "PlayerFacingName") ||
-                                !component.TryGetValue(out int DiscoverMinimapBitId, "DiscoverMinimapBitId"))
-                                continue;
-
-                            POIs.Add(new (PlayerFacingName.Text, actor.GetActorLocation()));
-                        }
-                    }
-                }
-                else
-                {
-                    Chests.Add(actor.GetActorLocation());
-                }
-            }
-        }
-
-        var bmp = TextureDecoder.Decode(provider.LoadObject<UTexture2D>("FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap.Apollo_Terrain_Minimap"));
-        using (var canvas = new SKCanvas(bmp))
-        {
-            var paint = new SKPaint
-            {
-                Color = SKColors.Red,
-                IsAntialias = true,
-                Style = SKPaintStyle.Fill,
-                StrokeWidth = 8
-            };
-            
-            var textpaint = new SKPaint
-            {
-                Color = SKColors.Coral,
-                IsAntialias = true,
-                Style = SKPaintStyle.Fill,
-                StrokeWidth = 18
-            };
-
-            var font = SKTypeface.FromFamilyName("Arial").ToFont();
-            font.Embolden = true;
-            
-            foreach (var pos in Chests)
-            {
-                var mappos = GetMapPos(pos);
-                canvas.DrawCircle(mappos.X, mappos.Y, 2.5f, paint);
-            }
-            foreach (var poi in POIs)
-            {
-                var mappos = GetMapPos(poi.Value);
-                canvas.DrawText(poi.Key, mappos.X, mappos.Y, SKTextAlign.Center, font, textpaint);
-            }
-
-            using (var image = SKImage.FromBitmap(bmp))
-            using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
-            using (var stream = File.OpenWrite("output.png"))
-            {
-                data.SaveTo(stream);
-            }
-        }
-        
-        // black magic from https://stackoverflow.com/questions/289/how-do-you-sort-a-dictionary-by-value
-        var sorted = (from entry in missedActors orderby entry.Value descending select entry).ToDictionary();
-        File.WriteAllText("missed.json", JsonConvert.SerializeObject(sorted, Formatting.Indented));
+        var mapman = new MapManager(provider);
+        mapman.Dump();
+        mapman.Output();
     }
 
-    static Vector2 GetMapPos(FVector WorldPos)
-    {
-        Vector3 CamPos = new Vector3(8500.0f, 508.0f, 100000.0f);
-        Vector3 CamRot = new Vector3(-180.0f, 0.0f, 0.0f);
-        //Vector3 CamRot = new Vector3(0.0f, 0.0f, -90.0f);
-
-        float OrthoFarClipPlane = 200000.0f;
-        float OrthoWidth = 299926.0f;
-
-        int ImageSize = 2048;
-        Matrix4x4 ViewMatrix =
-            Matrix4x4.CreateRotationZ(CamRot.Z.ToRadians()) *
-            Matrix4x4.CreateRotationY(CamRot.Y.ToRadians()) *
-            Matrix4x4.CreateRotationX(CamRot.X.ToRadians()) *
-            Matrix4x4.CreateTranslation(-CamPos);
-
-        Matrix4x4 ProjectionMatrix = new Matrix4x4(
-            2 / OrthoWidth, 0, 0, 0,
-            0, 2 / OrthoWidth, 0, 0,
-            0, 0, -2 / OrthoFarClipPlane, -OrthoFarClipPlane / OrthoFarClipPlane,
-            0, 0, 0, 1
-        );
-
-        Vector4 ClipSpacePoint = Vector4.Transform(Vector4.Transform(new Vector4(WorldPos, 1.0f), ViewMatrix), ProjectionMatrix);
-
-        return new Vector2
-        (
-            (ClipSpacePoint.X + 1) * 0.5f * ImageSize,
-            ((1 - (ClipSpacePoint.Y + 1) * 0.5f) * ImageSize) - 6f
-        );
-    }
 }
