@@ -52,11 +52,28 @@ static class MainClass
         mapman.Dump();
         mapman.Output();
 #endif
-        if (provider.TryLoadObject<UDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LT.BlastBerryComposite_LT", out var ltd) &&
-            provider.TryLoadObject<UDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LP.BlastBerryComposite_LP", out var lpd))
+
+
+#if false // Reload
+        new LootPoolManager(
+            provider.LoadObject<UCompositeDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LT.BlastBerryComposite_LT"),
+            provider.LoadObject<UCompositeDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LP.BlastBerryComposite_LP")
+            ).Test();
+#else // Battle Royale
+        UDataTable[] ltds =
         {
-            new LootPoolManager(ltd, lpd).Test();
-        }
+            provider.LoadObject<UDataTable>("FortniteGame/Content/Items/DataTables/AthenaLootTierData_Client.AthenaLootTierData_Client"),
+            provider.LoadObject<UDataTable>("FortniteGame/Plugins/GameFeatures/LootCurrentSeason/Content/DataTables/LootCurrentSeasonLootTierData_Client.LootCurrentSeasonLootTierData_Client"),
+        };
+        UDataTable[] lpds =
+        {
+            provider.LoadObject<UDataTable>("FortniteGame/Content/Items/DataTables/AthenaLootPackages_Client.AthenaLootPackages_Client"),
+            provider.LoadObject<UDataTable>("FortniteGame/Plugins/GameFeatures/LootCurrentSeason/Content/DataTables/LootCurrentSeasonLootPackages_Client.LootCurrentSeasonLootPackages_Client"),
+        };
+        new LootPoolManager(ltds, lpds).Test();
+#endif
+        
+
     }
 
 }

@@ -10,29 +10,38 @@ namespace FortMapper
 {
     public class LootPoolManager
     {
-        UDataTable LootTierData;
-        UDataTable LootPackages;
-        Dictionary<string, List<FStructFallback>> ParsedLootTierData;
-        Dictionary<string, List<FStructFallback>> ParsedLootPackages;
+        Dictionary<string, List<FStructFallback>> ParsedLootTierData = new();
+        Dictionary<string, List<FStructFallback>> ParsedLootPackages = new();
 
-        public LootPoolManager(UDataTable ltd, UDataTable lpd)
+        public LootPoolManager(UCompositeDataTable ltd, UCompositeDataTable lpd) :
+            this(ltd.Get<UDataTable[]>("ParentTables"), lpd.Get<UDataTable[]>("ParentTables"))
         {
-            LootTierData = ltd;
-            LootPackages = lpd;
-            ParsedLootTierData = new();
-            ParsedLootPackages = new();
-
-            foreach (var row in LootTierData.RowMap)
+        }
+        
+        public LootPoolManager(UDataTable[] ltds, UDataTable[] lpds)
+        {
+            Dictionary<string, FStructFallback> TempLTD = new();
+            Dictionary<string, FStructFallback> TempLPD = new();
+            foreach (var ltd in ltds)
             {
-                if (!row.Value.TryGetValue(out FName TierGroup, "TierGroup"))
-                    throw new Exception("Failed to parse LootTierData");
-
-                if (!ParsedLootTierData.ContainsKey(TierGroup.Text))
-                    ParsedLootTierData[TierGroup.Text] = new();
-                ParsedLootTierData[TierGroup.Text].Add(row.Value);
+                foreach (var row in ltd.RowMap)
+                {
+                    if (TempLTD.ContainsKey(row.Key.Text))
+                        TempLTD[row.Key.Text] = row.Value;
+                    else
+                        TempLTD.Add(row.Key.Text, row.Value);
+                }
             }
 
-            foreach (var row in LootPackages.RowMap)
+            foreach (var lpd in lpds)
+            {
+                foreach (var row in lpd.RowMap)
+                {
+                    TempLPD[row.Key.Text] = row.Value;
+                }
+            }
+
+            foreach (var row in TempLPD)
             {
                 if (!row.Value.TryGetValue(out FName LootPackageID, "LootPackageID"))
                     throw new Exception("Failed to parse LootTierData");
@@ -40,6 +49,15 @@ namespace FortMapper
                 if (!ParsedLootPackages.ContainsKey(LootPackageID.Text))
                     ParsedLootPackages[LootPackageID.Text] = new();
                 ParsedLootPackages[LootPackageID.Text].Add(row.Value);
+            }
+            foreach (var row in TempLTD)
+            {
+                if (!row.Value.TryGetValue(out FName TierGroup, "TierGroup"))
+                    throw new Exception("Failed to parse LootTierData");
+
+                if (!ParsedLootTierData.ContainsKey(TierGroup.Text))
+                    ParsedLootTierData[TierGroup.Text] = new();
+                ParsedLootTierData[TierGroup.Text].Add(row.Value);
             }
         }
 
@@ -103,30 +121,14 @@ namespace FortMapper
                         
                         switch (Rarity)
                         {
-                            case EFortRarity.Common:
-                                Console.ForegroundColor = ConsoleColor.Gray;
-                                break;
-                            case EFortRarity.Uncommon:
-                                Console.ForegroundColor = ConsoleColor.Green;
-                                break;
-                            case EFortRarity.Rare:
-                                Console.ForegroundColor = ConsoleColor.Blue;
-                                break;
-                            case EFortRarity.Epic:
-                                Console.ForegroundColor = ConsoleColor.Magenta;
-                                break;
-                            case EFortRarity.Legendary:
-                                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                                break;
-                            case EFortRarity.Mythic:
-                                Console.ForegroundColor = ConsoleColor.Yellow;
-                                break;
-                            case EFortRarity.Exotic:
-                                Console.ForegroundColor = ConsoleColor.Cyan;
-                                break;
-                            default:
-                                Console.WriteLine($"Unknown rarity: {Rarity}");
-                                break;
+                            case EFortRarity.Common:    Console.ForegroundColor = ConsoleColor.Gray; break;
+                            case EFortRarity.Uncommon:  Console.ForegroundColor = ConsoleColor.Green; break;
+                            case EFortRarity.Rare:      Console.ForegroundColor = ConsoleColor.Blue; break;
+                            case EFortRarity.Epic:      Console.ForegroundColor = ConsoleColor.Magenta; break;
+                            case EFortRarity.Legendary: Console.ForegroundColor = ConsoleColor.DarkYellow; break;
+                            case EFortRarity.Mythic:    Console.ForegroundColor = ConsoleColor.Yellow; break;
+                            case EFortRarity.Exotic:    Console.ForegroundColor = ConsoleColor.Cyan; break;
+                            default: Console.WriteLine($"Unknown rarity: {Rarity}"); break;
                         }
 
                         Console.Write(ItemName.Text);
