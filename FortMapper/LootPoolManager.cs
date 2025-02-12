@@ -91,7 +91,19 @@ namespace FortMapper
                 ParsedLootTierData[TierGroup.Text].Add(new FFortLootTierData(row.Value));
             }
         }
-
+        /*
+         * Okay something weird about this whole looting system ive noticed is that the ammo makes no sense
+         * There's stuff you think makes no sense in the beginning like the PackageDrop being a float and being able to be for example 1.5f
+         * But for the ammo it's the same always, Like for example shells.
+         * Shells in BR and shells in Reload are the same, they shouldn't
+         * Shells drop in 2 stacks in reload and 1 stack in BR, aka reload = 4 shells + 4 shell + shotgun. BR = 4 shells + shotgun
+         * Also the ammo index (mostly 2nd in the list) is always set to 0.
+         * Like in Loot_Athena_Treasure the LootPackageCategoryMinArray is [1,0,1,1,1, ...] WHY????
+         * Except for in RELOAD the ammo is set to 1 "[1,1,1,1,1,0...]" ?????
+         * The ONLY reason i could see where this makes sense is:
+         * every thing is called 1 time but for some reason the ammo drops 1 time when set to 0 and 2 times when set to 1 but WHY would it be that
+         * Im actually starting to go insane looking at this
+         */
         public void Test(string TierGroupName)
         {
             float TotalWeight = 0.0f;
