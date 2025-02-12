@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Numerics;
 using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Exports;
@@ -15,10 +10,7 @@ using CUE4Parse_Conversion.Textures;
 using Newtonsoft.Json;
 using SkiaSharp;
 using CUE4Parse.FileProvider;
-using SevenZip.CommandLineParser;
 using CUE4Parse.UE4.Objects.UObject;
-using static CUE4Parse.UE4.Objects.NavigationSystem.UNavCollision;
-using System.Diagnostics.CodeAnalysis;
 
 namespace FortMapper
 {
@@ -139,12 +131,12 @@ namespace FortMapper
 
                 foreach (var pos in Actors)
                 {
-                    var mappos = BRCamera.GetMapPos(pos);
+                    var mappos = MapCamera.GetMapPos(pos);
                     canvas.DrawCircle(mappos.X, mappos.Y, 2.5f, paint);
                 }
                 foreach (var poi in POIs)
                 {
-                    var mappos = BRCamera.GetMapPos(poi.Value);
+                    var mappos = MapCamera.GetMapPos(poi.Value);
                     canvas.DrawText(poi.Key, mappos.X, mappos.Y, SKTextAlign.Center, font, textpaint);
                 }
 
@@ -161,7 +153,7 @@ namespace FortMapper
             File.WriteAllText($"{path}missed.json", JsonConvert.SerializeObject(sorted, Formatting.Indented));
         }
 
-        static class BRCamera
+        static class MapCamera
         {
             static Vector3 CamPos = new Vector3(8500.0f, 508.0f, 100000.0f);
             static Vector3 CamRot = new Vector3(-180.0f, 0.0f, 0.0f);

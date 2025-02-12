@@ -1,24 +1,14 @@
-﻿using System.Globalization;
-using System.Numerics;
-using CUE4Parse.Compression;
+﻿using CUE4Parse.Compression;
 using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
 using CUE4Parse.MappingsProvider;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Actor;
-using CUE4Parse.UE4.Assets.Exports.Component;
-using CUE4Parse.UE4.Assets.Exports.Texture;
-using CUE4Parse.UE4.Objects.Core.i18N;
+using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Core.Misc;
-using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Versions;
-using CUE4Parse.UE4.VirtualFileSystem;
-using CUE4Parse.Utils;
-using CUE4Parse_Conversion.Textures;
 using FortMapper;
-using Newtonsoft.Json;
-using SkiaSharp;
 
 public static class ActorExtension
 {
@@ -57,9 +47,16 @@ static class MainClass
         provider.Initialize();
         provider.SubmitKey(new FGuid(), new FAesKey("0x4940113FFF51E90CA7C9633AA84BC8075ADC90C71EFC0D1E8FCBD1A9CAADFC91"));
 
+#if false
         var mapman = new MapManager(provider);
         mapman.Dump();
         mapman.Output();
+#endif
+        if (provider.TryLoadObject<UDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LT.BlastBerryComposite_LT", out var ltd) &&
+            provider.TryLoadObject<UDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LP.BlastBerryComposite_LP", out var lpd))
+        {
+            new LootPoolManager(ltd, lpd).Test();
+        }
     }
 
 }
