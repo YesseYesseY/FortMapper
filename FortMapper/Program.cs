@@ -53,12 +53,11 @@ static class MainClass
         mapman.Output();
 #endif
 
-
-#if false // Reload
-        new LootPoolManager(
+#if true // Reload
+        var lpman = new LootPoolManager(
             provider.LoadObject<UCompositeDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LT.BlastBerryComposite_LT"),
             provider.LoadObject<UCompositeDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LP.BlastBerryComposite_LP")
-            ).Test();
+            );
 #else // Battle Royale
         UDataTable[] ltds =
         {
@@ -70,9 +69,13 @@ static class MainClass
             provider.LoadObject<UDataTable>("FortniteGame/Content/Items/DataTables/AthenaLootPackages_Client.AthenaLootPackages_Client"),
             provider.LoadObject<UDataTable>("FortniteGame/Plugins/GameFeatures/LootCurrentSeason/Content/DataTables/LootCurrentSeasonLootPackages_Client.LootCurrentSeasonLootPackages_Client"),
         };
-        new LootPoolManager(ltds, lpds).Test();
+        var lpman = new LootPoolManager(ltds, lpds);
 #endif
-        
+        Console.WriteLine("/////////////////////////////////////////////////////////////////////////");
+        lpman.Test("Loot_AthenaTreasure");
+        Console.WriteLine("/////////////////////////////////////////////////////////////////////////");
+        //lpman.Test("Loot_AthenaFloorLoot");
+        //Console.WriteLine("/////////////////////////////////////////////////////////////////////////");
 
     }
 
