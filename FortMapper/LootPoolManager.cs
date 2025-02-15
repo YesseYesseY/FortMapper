@@ -11,28 +11,31 @@ namespace FortMapper
 {
     public class FFortLootTierData
     {
-        FStructFallback sfb;
-        public FFortLootTierData(FStructFallback _sfb)
+        public FFortLootTierData(FStructFallback sfb)
         {
-            sfb = _sfb;
+            LootPackage = sfb.Get<FName>("LootPackage");
+            Weight = sfb.Get<float>("Weight");
         }
 
-        public FName LootPackage => sfb.Get<FName>("LootPackage");
-        public float Weight => sfb.Get<float>("Weight");
+        public FName LootPackage;
+        public float Weight;
     }
     public class FFortLootPackageData
     {
-        FStructFallback sfb;
-        public FFortLootPackageData(FStructFallback _sfb)
+        public FFortLootPackageData(FStructFallback sfb)
         {
-            sfb = _sfb;
+            LootPackageID = sfb.Get<FName>("LootPackageID");
+            Weight = sfb.Get<float>("Weight");
+            LootPackageCall = sfb.Get<string>("LootPackageCall");
+            ItemDefinition = sfb.Get<FSoftObjectPath>("ItemDefinition");
+            CountRange = sfb.Get<TIntVector2<int>>("CountRange");
         }
 
-        public FName LootPackageID => sfb.Get<FName>("LootPackageID");
-        public float Weight => sfb.Get<float>("Weight");
-        public string LootPackageCall => sfb.Get<string>("LootPackageCall");
-        public FSoftObjectPath ItemDefinition => sfb.Get<FSoftObjectPath>("ItemDefinition");
-        public TIntVector2<int> CountRange => sfb.Get<TIntVector2<int>>("CountRange");
+        public FName LootPackageID;
+        public float Weight;
+        public string LootPackageCall;
+        public FSoftObjectPath ItemDefinition;
+        public TIntVector2<int> CountRange;
     }
 
     public class LootPoolManager
@@ -119,7 +122,7 @@ namespace FortMapper
 
             foreach (var thing in Weights)
             {
-                Console.WriteLine($"{thing.Key} ({(thing.Value / TotalWeight) * 100:0.00}%)");
+                Console.WriteLine($"{thing.Key} ({(thing.Value / TotalWeight) * 100:P2})");
                 foreach (var thing2 in ParsedLootPackages[thing.Key])
                 {
                     if (thing2.Weight != 1.0f) // TODO: :)
@@ -138,31 +141,37 @@ namespace FortMapper
                         if (thing3.Weight == 0.0f)
                             continue;
 
+                        Console.Write("\t\t");
                         if (!thing3.ItemDefinition.TryLoad(out UObject ItemDef) ||
                             !ItemDef.TryGetValue(out FText ItemName, "ItemName"))
-                            continue;
-
-                        // TODO: CountRange thingy
-
-                        var Rarity = ItemDef.GetOrDefault("Rarity", EFortRarity.Uncommon);
-
-                        Console.Write($"\t\t{thing3.CountRange.X}x ");
-                        
-                        switch (Rarity)
                         {
-                            case EFortRarity.Common:    Console.ForegroundColor = ConsoleColor.Gray; break;
-                            case EFortRarity.Uncommon:  Console.ForegroundColor = ConsoleColor.Green; break;
-                            case EFortRarity.Rare:      Console.ForegroundColor = ConsoleColor.Blue; break;
-                            case EFortRarity.Epic:      Console.ForegroundColor = ConsoleColor.Magenta; break;
-                            case EFortRarity.Legendary: Console.ForegroundColor = ConsoleColor.DarkYellow; break;
-                            case EFortRarity.Mythic:    Console.ForegroundColor = ConsoleColor.Yellow; break;
-                            case EFortRarity.Exotic:    Console.ForegroundColor = ConsoleColor.Cyan; break;
-                            default: Console.WriteLine($"Unknown rarity: {Rarity}"); break;
+                            var scuffed = thing3.ItemDefinition.ToString();
+                            var slashindex = scuffed.LastIndexOf('/') + 1;
+                            Console.Write(scuffed.Substring(slashindex, scuffed.LastIndexOf('.') - slashindex));
+                        }
+                        else
+                        {
+                            var Rarity = ItemDef.GetOrDefault("Rarity", EFortRarity.Uncommon);
+
+                            Console.Write($"{thing3.CountRange.X}x ");
+
+                            switch (Rarity)
+                            {
+                                case EFortRarity.Common: Console.ForegroundColor = ConsoleColor.Gray; break;
+                                case EFortRarity.Uncommon: Console.ForegroundColor = ConsoleColor.Green; break;
+                                case EFortRarity.Rare: Console.ForegroundColor = ConsoleColor.Blue; break;
+                                case EFortRarity.Epic: Console.ForegroundColor = ConsoleColor.Magenta; break;
+                                case EFortRarity.Legendary: Console.ForegroundColor = ConsoleColor.DarkYellow; break;
+                                case EFortRarity.Mythic: Console.ForegroundColor = ConsoleColor.Yellow; break;
+                                case EFortRarity.Exotic: Console.ForegroundColor = ConsoleColor.Cyan; break;
+                                default: Console.WriteLine($"Unknown rarity: {Rarity}"); break;
+                            }
+
+                            Console.Write(ItemName.Text);
+                            Console.ForegroundColor = ConsoleColor.White;
                         }
 
-                        Console.Write(ItemName.Text);
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.WriteLine($" ({(thing3.Weight / TotalWeight2) * 100:0.00}%)");
+                        Console.WriteLine($" ({thing3.Weight / TotalWeight2:P2})");
                     }
                 }
                 Console.WriteLine();

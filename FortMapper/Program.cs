@@ -46,17 +46,21 @@ static class MainClass
         provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
         provider.Initialize();
         provider.SubmitKey(new FGuid(), new FAesKey("0x4940113FFF51E90CA7C9633AA84BC8075ADC90C71EFC0D1E8FCBD1A9CAADFC91"));
-
 #if false
         var mapman = new MapManager(provider);
         mapman.Dump();
         mapman.Output();
 #endif
 
-#if true // Reload
+#if true // Reload/BR
         var lpman = new LootPoolManager(
+#if false // Reload/OG
             provider.LoadObject<UCompositeDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LT.BlastBerryComposite_LT"),
             provider.LoadObject<UCompositeDataTable>("FortniteGame/Plugins/GameFeatures/BlastBerry/Content/DataTables/BlastBerryComposite_LP.BlastBerryComposite_LP")
+#else
+            provider.LoadObject<UCompositeDataTable>("FortniteGame/Plugins/GameFeatures/Figment/Figment_S01/Content/Datatables/Composite_LTD_Figment.Composite_LTD_Figment"),
+            provider.LoadObject<UCompositeDataTable>("FortniteGame/Plugins/GameFeatures/Figment/Figment_S01/Content/Datatables/Composite_LP_Figment.Composite_LP_Figment")
+#endif
             );
 #else // Battle Royale
         UDataTable[] ltds =
