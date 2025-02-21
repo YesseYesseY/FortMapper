@@ -45,13 +45,15 @@ static class MainClass
 
         provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
         provider.Initialize();
-        provider.SubmitKey(new FGuid(), new FAesKey("0x4940113FFF51E90CA7C9633AA84BC8075ADC90C71EFC0D1E8FCBD1A9CAADFC91"));
-#if false
+        provider.SubmitKey(new FGuid(), new FAesKey("0x9B00653526286646CD053FAA0E3AAC2F56B8684899CD29EA62880CC2EEDF84C8"));
+
+#if true
         var mapman = new MapManager(provider);
         mapman.Dump();
         mapman.Output();
 #endif
 
+#if false
 #if true // Reload/BR
         var lpman = new LootPoolManager(
 #if false // Reload/OG
@@ -80,6 +82,7 @@ static class MainClass
         Console.WriteLine("/////////////////////////////////////////////////////////////////////////");
         //lpman.Test("Loot_AthenaFloorLoot");
         //Console.WriteLine("/////////////////////////////////////////////////////////////////////////");
+#endif
 
     }
 

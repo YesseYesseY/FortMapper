@@ -129,6 +129,20 @@ namespace FortMapper
                 var font = SKTypeface.FromFamilyName("Arial").ToFont();
                 font.Embolden = true;
 
+#if false
+                FVector[] blockingvols =
+                {
+                    new FVector(75424.983445f, 11683.442438f, 4458.000000f),
+                    new FVector(75312.060884f, 11789.270735f, 4458.000000f),
+
+                };
+                foreach (var pos in blockingvols)
+                {
+                    var mappos = MapCamera.GetMapPos(pos);
+                    canvas.DrawCircle(mappos.X, mappos.Y, 7.5f, paint);
+                }
+#endif
+#if true
                 foreach (var pos in Actors)
                 {
                     var mappos = MapCamera.GetMapPos(pos);
@@ -139,6 +153,7 @@ namespace FortMapper
                     var mappos = MapCamera.GetMapPos(poi.Value);
                     canvas.DrawText(poi.Key, mappos.X, mappos.Y, SKTextAlign.Center, font, textpaint);
                 }
+#endif
 
                 using (var image = SKImage.FromBitmap(bmp))
                 using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
