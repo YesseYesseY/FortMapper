@@ -21,6 +21,9 @@ using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 
 namespace FortMapper
 {
+    // TODO: (not in order)
+    // * Advanced output
+    // * Move provider out 
     public class WorldExport
     {
         public Vector3 Camera_Pos;
