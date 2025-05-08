@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CUE4Parse" Version="1.2.1" />
-    <PackageReference Include="CUE4Parse-Conversion" Version="1.2.0" />
-    <PackageReference Include="SkiaSharp" Version="3.116.1" />
+    <ProjectReference Include="..\FortMapperLib\FortMapperLib.csproj" />
   </ItemGroup>
 
 </Project>

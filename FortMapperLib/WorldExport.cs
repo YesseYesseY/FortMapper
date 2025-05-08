@@ -1,0 +1,134 @@
+﻿using CUE4Parse.Compression;
+using CUE4Parse.FileProvider;
+using CUE4Parse.MappingsProvider;
+using CUE4Parse.Encryption.Aes;
+using CUE4Parse.UE4.Objects.Core.Misc;
+using CUE4Parse.UE4.Versions;
+using CUE4Parse.UE4.Assets.Exports.Texture;
+using CUE4Parse_Conversion.Textures;
+using CUE4Parse.UE4.Objects.Engine;
+using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.Objects.Core.Math;
+using System.Numerics;
+using CUE4Parse.UE4.Assets.Exports.Component;
+using CUE4Parse.UE4.Objects.UObject;
+using CUE4Parse.UE4.Assets.Exports.WorldPartition;
+using CUE4Parse.UE4.Assets.Utils;
+using CUE4Parse.UE4.Assets.Objects.Properties;
+using CUE4Parse.UE4.Assets.Objects;
+using CUE4Parse.UE4.Assets.Exports.Actor;
+using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
+
+namespace FortMapper
+{
+    public class WorldExport
+    {
+        public Vector3 Camera_Pos;
+        public Vector3 Camera_Rot;
+        public Vector3 Camera_RelRot;
+        public List<Vector3> Actors = new();
+        public CTexture? MinimapTexture;
+
+        public string[] Actor_Class_Names = {
+            "Tiered_Chest_6_Figment_C"
+        };
+
+        // All values below are the same on hermes and figment so i see no reason to dynamically get them
+        // Also you prob dont need them
+        public readonly float Camera_FieldOfView = 14.0f;
+        public readonly float Camera_OrthoWidth = 262426.0f;
+        public readonly float Camera_OrthoNearClipPlane = 0.0f;
+        public readonly float Camera_OrthoFarClipPlane = 200000.0f;
+        public readonly float Camera_AspectRatio = 1.0f;
+
+        private void Parse(FPackageIndex? pi)
+        {
+            if (pi is null || pi.IsNull)
+                return;
+
+            if (pi.Name.Contains("CameraActor") &&
+                pi.TryLoad(out UObject? camera) &&
+                camera is not null &&
+                camera.TryGet("Tags", out FName[]? tags) &&
+                tags is not null &&
+                tags.Length > 0 &&
+                tags[0].PlainText == "MinimapCaptureCamera" &&
+                camera.TryGet("SceneComponent", out USceneComponent? sc) &&
+                sc is not null &&
+                camera.TryGet("CameraComponent", out UCameraComponent? cc) &&
+                cc is not null
+            )
+            {
+                if (cc.TryGet("RelativeRotation", out FRotator cc_relrot))
+                    Camera_RelRot = cc_relrot;
+                Camera_Pos = sc.GetRelativeLocation();
+                var rot = sc.GetRelativeRotation();
+                Camera_Rot = new(rot.Roll, rot.Pitch, rot.Yaw);
+            }
+
+            if (pi.ResolvedObject is not null && 
+                pi.ResolvedObject.Class is not null
+                )
+            {
+                foreach (var class_name in Actor_Class_Names)
+                {
+                    if (pi.ResolvedObject.Class.Name.PlainText == class_name &&
+                        pi.ResolvedObject.TryLoad(out UObject actor) &&
+                        actor.TryGet("StaticMeshComponent", out UStaticMeshComponent? smc) && smc is not null
+                        )
+                    {
+                        Actors.Add(smc.GetRelativeLocation());
+                    }
+                }
+                    
+            }
+        }
+
+        public static WorldExport? Yes(string mappath, string minimappath)
+        {
+            OodleHelper.DownloadOodleDll();
+            OodleHelper.Initialize(OodleHelper.OODLE_DLL_NAME);
+
+            var provider = new DefaultFileProvider(@"C:\Program Files\Epic Games\Fortnite\FortniteGame\Content\Paks", SearchOption.TopDirectoryOnly, new VersionContainer(EGame.GAME_UE5_LATEST));
+
+            provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
+            provider.Initialize();
+            provider.SubmitKey(new FGuid(), new FAesKey("0x17243B0E3E66DA90347F7C4787692505EC5E5285484633D71B09CD6ABB714E9B"));
+
+            var ret = new WorldExport();
+
+            ret.MinimapTexture = provider.LoadPackageObject<UTexture2D>(minimappath).Decode();
+
+            string mapname;
+
+            {
+                var world = provider.LoadPackageObject<UWorld>(mappath);
+                mapname = world.Name;
+                var level = world.PersistentLevel.Load<ULevel>();
+                if (level is null)
+                {
+                    Console.WriteLine(":(");
+                    return null;
+                }
+
+                foreach (var actor in level.Actors)
+                    ret.Parse(actor);
+            }
+
+            // This works but is kinda scuffed, the other way to do it would be to get it from
+            // World -> PersistentLevel -> WorldSettings -> WorldPartition -> RuntimeHash -> RuntimeStreamingData -> MainPartition ->
+            // SpatiallyLoadedCells -> (foreach) -> LevelStreaming -> WorldAsset -> PersistentLevel
+            foreach (var file in provider.Files)
+            {
+                if (file.Key.EndsWith(".umap") && file.Key.Contains($"{mapname}/_Generated_/"))
+                {
+                    var level = provider.LoadPackageObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
+                    foreach (var actor in level.Actors)
+                        ret.Parse(actor);
+                }
+            }
+
+            return ret;
+        }
+    }
+}
