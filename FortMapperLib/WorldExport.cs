@@ -18,30 +18,45 @@ using CUE4Parse.UE4.Assets.Objects.Properties;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
+using Newtonsoft.Json;
+using SkiaSharp;
 
 namespace FortMapper
 {
     // TODO: (not in order)
-    // * Advanced output
-    // * Move provider out 
+    // * Choosing actors to export
     public class WorldExport
     {
+        [JsonIgnore]
+        public static string OutPath = "./World/";
+
+        [JsonProperty("camera_pos")]
         public Vector3 Camera_Pos;
+        [JsonProperty("camera_rot")]
         public Vector3 Camera_Rot;
+        [JsonProperty("camera_relrot")]
         public Vector3 Camera_RelRot;
+        [JsonProperty("actors")]
         public List<Vector3> Actors = new();
+        [JsonIgnore]
         public CTexture? MinimapTexture;
 
+        [JsonIgnore]
         public string[] Actor_Class_Names = {
             "Tiered_Chest_6_Figment_C"
         };
 
         // All values below are the same on hermes and figment so i see no reason to dynamically get them
         // Also you prob dont need them
+        [JsonProperty("camera_field_of_view")]
         public readonly float Camera_FieldOfView = 14.0f;
+        [JsonProperty("camera_ortho_width")]
         public readonly float Camera_OrthoWidth = 262426.0f;
+        [JsonProperty("camera_ortho_near_clip_plane")]
         public readonly float Camera_OrthoNearClipPlane = 0.0f;
+        [JsonProperty("camera_ortho_far_clip_plane")]
         public readonly float Camera_OrthoFarClipPlane = 200000.0f;
+        [JsonProperty("camera_aspect_ratio")]
         public readonly float Camera_AspectRatio = 1.0f;
 
         private void Parse(FPackageIndex? pi)
@@ -87,25 +102,36 @@ namespace FortMapper
             }
         }
 
+        public void Export(bool export_minimap = false)
+        {
+            Directory.CreateDirectory(OutPath);
+            File.WriteAllText(Path.Join(OutPath, "World.json"), JsonConvert.SerializeObject(this));
+
+            if (export_minimap)
+            {
+                var icondecode = MinimapTexture?.ToSkBitmap();
+                if (icondecode is not null)
+                {
+                    using (var image = SKImage.FromBitmap(icondecode))
+                    using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
+                    using (var stream = File.OpenWrite($"{OutPath}/map.png"))
+                    {
+                        data.SaveTo(stream);
+                    }
+                }
+            }
+        }
+
         public static WorldExport? Yes(string mappath, string minimappath)
         {
-            OodleHelper.DownloadOodleDll();
-            OodleHelper.Initialize(OodleHelper.OODLE_DLL_NAME);
-
-            var provider = new DefaultFileProvider(@"C:\Program Files\Epic Games\Fortnite\FortniteGame\Content\Paks", SearchOption.TopDirectoryOnly, new VersionContainer(EGame.GAME_UE5_LATEST));
-
-            provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
-            provider.Initialize();
-            provider.SubmitKey(new FGuid(), new FAesKey("0x17243B0E3E66DA90347F7C4787692505EC5E5285484633D71B09CD6ABB714E9B"));
-
             var ret = new WorldExport();
 
-            ret.MinimapTexture = provider.LoadPackageObject<UTexture2D>(minimappath).Decode();
+            ret.MinimapTexture = GlobalProvider.LoadPackageObject<UTexture2D>(minimappath).Decode();
 
             string mapname;
 
             {
-                var world = provider.LoadPackageObject<UWorld>(mappath);
+                var world = GlobalProvider.LoadPackageObject<UWorld>(mappath);
                 mapname = world.Name;
                 var level = world.PersistentLevel.Load<ULevel>();
                 if (level is null)
@@ -121,11 +147,11 @@ namespace FortMapper
             // This works but is kinda scuffed, the other way to do it would be to get it from
             // World -> PersistentLevel -> WorldSettings -> WorldPartition -> RuntimeHash -> RuntimeStreamingData -> MainPartition ->
             // SpatiallyLoadedCells -> (foreach) -> LevelStreaming -> WorldAsset -> PersistentLevel
-            foreach (var file in provider.Files)
+            foreach (var file in GlobalProvider.Files)
             {
                 if (file.Key.EndsWith(".umap") && file.Key.Contains($"{mapname}/_Generated_/"))
                 {
-                    var level = provider.LoadPackageObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
+                    var level = GlobalProvider.LoadPackageObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
                     foreach (var actor in level.Actors)
                         ret.Parse(actor);
                 }

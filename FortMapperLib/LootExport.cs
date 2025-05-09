@@ -59,8 +59,7 @@ namespace FortMapper
     }
 
     // TODO: (not in order)
-    // * CompositeDatatable
-    // * Move provider out
+    // * GameData? (For bars and stuff)
     public class LootExport
     {
         // Options
@@ -100,6 +99,7 @@ namespace FortMapper
 
         public void Export(bool export_icons = false)
         {
+            Directory.CreateDirectory(OutPath);
             File.WriteAllText($"{OutPath}LTD.json", JsonConvert.SerializeObject(LTD, Formatting.Indented));
             File.WriteAllText($"{OutPath}LP.json", JsonConvert.SerializeObject(LP, Formatting.Indented));
             File.WriteAllText($"{OutPath}LPC.json", JsonConvert.SerializeObject(LPC, Formatting.Indented));
@@ -111,21 +111,9 @@ namespace FortMapper
 
         public static LootExport Yes(string ltd_path, string lp_path)
         {
-            OodleHelper.DownloadOodleDll();
-            OodleHelper.Initialize(OodleHelper.OODLE_DLL_NAME);
+            var ltd_package = GlobalProvider.LoadPackageObject<UDataTable>(ltd_path);
+            var lp_package = GlobalProvider.LoadPackageObject<UDataTable>(lp_path);
 
-            var provider = new DefaultFileProvider(@"C:\Program Files\Epic Games\Fortnite\FortniteGame\Content\Paks", SearchOption.AllDirectories, new VersionContainer(EGame.GAME_UE5_LATEST), StringComparer.OrdinalIgnoreCase);
-            
-            provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
-            provider.Initialize();
-            provider.SubmitKey(new FGuid(), new FAesKey("0x17243B0E3E66DA90347F7C4787692505EC5E5285484633D71B09CD6ABB714E9B"));
-            provider.PostMount();
-            provider.LoadVirtualPaths();
-
-            var ltd_package = provider.LoadPackageObject<UDataTable>(ltd_path);
-            var lp_package = provider.LoadPackageObject<UDataTable>(lp_path);
-
-            Directory.CreateDirectory(OutPath);
             var ret = new LootExport();
 
             foreach (var row in ltd_package.RowMap)
