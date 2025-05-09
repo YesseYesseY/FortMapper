@@ -23,41 +23,44 @@ using SkiaSharp;
 
 namespace FortMapper
 {
-    // TODO: (not in order)
-    // * Choosing actors to export
     public class WorldExport
     {
         [JsonIgnore]
         public static string OutPath = "./World/";
+        [JsonIgnore]
+        public static List<string> ActorsToExport = new();
+        [JsonIgnore]
+        public static Formatting JsonFormatting = Formatting.None;
+        [JsonIgnore]
+        public static bool OutputActorClasses = false;
 
-        [JsonProperty("camera_pos")]
-        public Vector3 Camera_Pos;
-        [JsonProperty("camera_rot")]
-        public Vector3 Camera_Rot;
-        [JsonProperty("camera_relrot")]
-        public Vector3 Camera_RelRot;
-        [JsonProperty("actors")]
-        public List<Vector3> Actors = new();
+        
         [JsonIgnore]
         public CTexture? MinimapTexture;
-
         [JsonIgnore]
-        public string[] Actor_Class_Names = {
-            "Tiered_Chest_6_Figment_C"
-        };
+        public Dictionary<string, int> ActorClasses = new();
 
+
+        [JsonProperty("actors")]
+        public Dictionary<string, List<Vector3>> Actors = new();
+        [JsonProperty("camera_pos")]
+        public Vector3 CameraPos;
+        [JsonProperty("camera_rot")]
+        public FRotator CameraRot;
+        [JsonProperty("camera_relrot")]
+        public FRotator CameraRelRot;
         // All values below are the same on hermes and figment so i see no reason to dynamically get them
         // Also you prob dont need them
         [JsonProperty("camera_field_of_view")]
-        public readonly float Camera_FieldOfView = 14.0f;
+        public readonly float CameraFieldOfView = 14.0f;
         [JsonProperty("camera_ortho_width")]
-        public readonly float Camera_OrthoWidth = 262426.0f;
+        public readonly float CameraOrthoWidth = 262426.0f;
         [JsonProperty("camera_ortho_near_clip_plane")]
-        public readonly float Camera_OrthoNearClipPlane = 0.0f;
+        public readonly float CameraOrthoNearClipPlane = 0.0f;
         [JsonProperty("camera_ortho_far_clip_plane")]
-        public readonly float Camera_OrthoFarClipPlane = 200000.0f;
+        public readonly float CameraOrthoFarClipPlane = 200000.0f;
         [JsonProperty("camera_aspect_ratio")]
-        public readonly float Camera_AspectRatio = 1.0f;
+        public readonly float CameraAspectRatio = 1.0f;
 
         private void Parse(FPackageIndex? pi)
         {
@@ -78,24 +81,27 @@ namespace FortMapper
             )
             {
                 if (cc.TryGet("RelativeRotation", out FRotator cc_relrot))
-                    Camera_RelRot = cc_relrot;
-                Camera_Pos = sc.GetRelativeLocation();
-                var rot = sc.GetRelativeRotation();
-                Camera_Rot = new(rot.Roll, rot.Pitch, rot.Yaw);
+                    CameraRelRot = cc_relrot;
+                CameraPos = sc.GetRelativeLocation();
+                CameraRot = sc.GetRelativeRotation();
             }
 
             if (pi.ResolvedObject is not null && 
-                pi.ResolvedObject.Class is not null
-                )
+                pi.ResolvedObject.Class is not null)
             {
-                foreach (var class_name in Actor_Class_Names)
+                if (!ActorClasses.ContainsKey(pi.ResolvedObject.Class.Name.Text))
+                    ActorClasses[pi.ResolvedObject.Class.Name.Text] = 0;
+
+                ActorClasses[pi.ResolvedObject.Class.Name.Text]++;
+
+                foreach (var class_name in ActorsToExport)
                 {
                     if (pi.ResolvedObject.Class.Name.PlainText == class_name &&
                         pi.ResolvedObject.TryLoad(out UObject actor) &&
                         actor.TryGet("StaticMeshComponent", out UStaticMeshComponent? smc) && smc is not null
                         )
                     {
-                        Actors.Add(smc.GetRelativeLocation());
+                        Actors[class_name].Add(smc.GetRelativeLocation());
                     }
                 }
                     
@@ -105,7 +111,14 @@ namespace FortMapper
         public void Export(bool export_minimap = false)
         {
             Directory.CreateDirectory(OutPath);
-            File.WriteAllText(Path.Join(OutPath, "World.json"), JsonConvert.SerializeObject(this));
+            File.WriteAllText(Path.Join(OutPath, "World.json"), JsonConvert.SerializeObject(this, JsonFormatting));
+
+            if (OutputActorClasses)
+            {
+                // https://stackoverflow.com/questions/289/how-do-you-sort-a-dictionary-by-value
+                ActorClasses = (from entry in ActorClasses orderby entry.Value descending select entry).ToDictionary();
+                File.WriteAllText(Path.Join(OutPath, "ActorClasses.json"), JsonConvert.SerializeObject(ActorClasses, JsonFormatting));
+            }
 
             if (export_minimap)
             {
@@ -125,6 +138,8 @@ namespace FortMapper
         public static WorldExport? Yes(string mappath, string minimappath)
         {
             var ret = new WorldExport();
+            foreach (var class_name in ActorsToExport)
+                ret.Actors[class_name] = new();
 
             ret.MinimapTexture = GlobalProvider.LoadPackageObject<UTexture2D>(minimappath).Decode();
 

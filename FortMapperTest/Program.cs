@@ -1,16 +1,10 @@
-﻿using CUE4Parse.UE4.Assets.Exports.Actor;
-using CUE4Parse.UE4.Assets.Exports.Texture;
-using CUE4Parse.UE4.Objects.Core.Math;
-using CUE4Parse.Utils;
-using CUE4Parse_Conversion.Textures;
-using SkiaSharp;
-using System.IO;
-using System.Numerics;
+﻿using FortMapper;
+using Newtonsoft.Json;
 
-FortMapper.GlobalProvider.Init();
+GlobalProvider.Init();
 
-#if false
-FortMapper.LootExport.Yes(
+#if true
+LootExport.Yes(
      // "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/FigmentLootTierData.FigmentLootTierData",
      // "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/FigmentLootPackages.FigmentLootPackages"
      "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LTD_Figment.NoBuild_Composite_LTD_Figment",
@@ -19,7 +13,12 @@ FortMapper.LootExport.Yes(
 #endif
 
 #if true
-var yes = FortMapper.WorldExport.Yes("FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",
+
+WorldExport.JsonFormatting = Formatting.Indented;
+//WorldExport.OutputActorClasses = true;
+WorldExport.ActorsToExport.AddRange("Tiered_Chest_6_Figment_C", "Tiered_Ammo_Figment_C");
+
+var yes = WorldExport.Yes("FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",
     "FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_MapUI/Content/MiniMapAthena_S03.MiniMapAthena_S03");
 
 if (yes is null || yes.MinimapTexture is null)
