@@ -8,9 +8,9 @@ using System.IO;
 using System.Numerics;
 
 FortMapper.LootExport.Yes(
-    "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/FigmentLootTierData.FigmentLootTierData", 
+    "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/FigmentLootTierData.FigmentLootTierData",
     "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/FigmentLootPackages.FigmentLootPackages"
-);
+).Export(true);
 
 #if false
 var yes = FortMapper.WorldExport.Yes("FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",

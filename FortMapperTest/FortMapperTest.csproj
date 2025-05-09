@@ -11,4 +11,10 @@
     <ProjectReference Include="..\FortMapperLib\FortMapperLib.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Loot\Loot.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
