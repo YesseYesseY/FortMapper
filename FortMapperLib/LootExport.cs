@@ -51,15 +51,25 @@ namespace FortMapper
         [JsonIgnore]
         public UObject ItemDef;
         [JsonProperty("item_name")]
-        public string ItemName => ItemDef.Get<FText>("ItemName").Text;
+        public string ItemName
+        {
+            get {
+                if (ItemDef.TryGet("ItemName", out FText? text) && text is not null)
+                {
+                    return text.Text;
+                }
+                return "No name :)";
+            }
+        }
         [JsonProperty("item_rarity")]
         public string ItemRarity => ItemDef.GetOrDefault("Rarity", EFortRarity.Uncommon).ToString();
         [JsonProperty("item_count")]
         public int ItemCount;
     }
 
+    // NOTE: Only OG loot is seriously tested
     // TODO: (not in order)
-    // * GameData? (For bars and stuff)
+    // * Automatically get all the correct datatables from gamefeatures
     public class LootExport
     {
         // Options
@@ -71,23 +81,25 @@ namespace FortMapper
         public Dictionary<string, List<LootPackage>> LP = new();
         public Dictionary<string, List<LootPackageCall>> LPC = new();
         
-
-
         private static void SaveItemIcon(UObject itemdef)
         {
             if (itemdef.TryGet("DataList", out FInstancedStruct[]? dl) && dl is not null)
             {
                 foreach (var thing in dl)
                 {
-                    if (thing.NonConstStruct is not null && thing.NonConstStruct.TryGet("LargeIcon", out FSoftObjectPath iconpath) &&
-                        iconpath.TryLoad<UTexture2D>(out UTexture2D? icon) && icon is not null)
+                    if (thing.NonConstStruct!.TryGet("LargeIcon", out FSoftObjectPath iconpath) &&
+                        iconpath.TryLoad<UTexture2D>(out UTexture2D? icon))
                     {
+                        var iconoutpath = $"{OutPath}/{icon.Name}.png";
+                        if (File.Exists(iconoutpath))
+                            continue;
+
                         var icondecode = icon.Decode()?.ToSkBitmap();
                         if (icondecode is not null)
                         {
                             using (var image = SKImage.FromBitmap(icondecode))
                             using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
-                            using (var stream = File.OpenWrite($"{OutPath}/{icon.Name}.png"))
+                            using (var stream = File.OpenWrite(iconoutpath))
                             {
                                 data.SaveTo(stream);
                             }
@@ -110,61 +122,65 @@ namespace FortMapper
                         SaveItemIcon(thingy.ItemDef);
         }
 
-        public static LootExport Yes(string ltd_path, string lp_path)
+        public static LootExport Yes(params (string ltd, string lp)[] paths)
         {
-            var ltd_package = GlobalProvider.LoadPackageObject<UDataTable>(ltd_path);
-            var lp_package = GlobalProvider.LoadPackageObject<UDataTable>(lp_path);
-
             var ret = new LootExport();
 
-            foreach (var row in ltd_package.RowMap)
+            foreach (var lootpath in paths)
             {
-                var tg = row.Value.Get<FName>("TierGroup").Text;
-                var lp = row.Value.Get<FName>("LootPackage").Text;
-                var weight = row.Value.Get<float>("Weight");
-                if (weight <= 0.0f) continue;
+                var ltd_package = GlobalProvider.LoadPackageObject<UDataTable>(lootpath.ltd);
+                var lp_package = GlobalProvider.LoadPackageObject<UDataTable>(lootpath.lp);
 
-                if (!ret.LTD.ContainsKey(tg))
-                    ret.LTD[tg] = new();
 
-                ret.LTD[tg].Add(new LootTierData { Weight = weight, LootPackage = lp });
-            }
-
-            foreach (var row in lp_package.RowMap)
-            {
-                var lpc = row.Value.Get<string>("LootPackageCall");
-                var lpid = row.Value.Get<FName>("LootPackageID").Text;
-                var weight = row.Value.Get<float>("Weight");
-                if (weight <= 0.0f) continue;
-
-                if (lpc == "")
+                foreach (var row in ltd_package.RowMap)
                 {
-                    // If its WorldList and has no itemdef just ignore
-                    if (row.Value.TryGet("ItemDefinition", out FSoftObjectPath itemdefpath) &&
-                        itemdefpath.TryLoad(out UObject? itemdef) && itemdef is not null)
-                    {
-                        var count = row.Value.Get<TIntVector2<int>>("CountRange");
-                        if (!ret.LPC.ContainsKey(lpid))
-                            ret.LPC[lpid] = new();
+                    var tg = row.Value.Get<FName>("TierGroup").Text;
+                    var lp = row.Value.Get<FName>("LootPackage").Text;
+                    var weight = row.Value.Get<float>("Weight");
+                    if (weight <= 0.0f) continue;
 
-                        ret.LPC[lpid].Add(new LootPackageCall
+                    if (!ret.LTD.ContainsKey(tg))
+                        ret.LTD[tg] = new();
+
+                    ret.LTD[tg].Add(new LootTierData { Weight = weight, LootPackage = lp });
+                }
+
+                foreach (var row in lp_package.RowMap)
+                {
+                    var lpc = row.Value.Get<string>("LootPackageCall");
+                    var lpid = row.Value.Get<FName>("LootPackageID").Text;
+                    var weight = row.Value.Get<float>("Weight");
+                    if (weight <= 0.0f) continue;
+
+                    if (lpc == "")
+                    {
+                        // If its WorldList and has no itemdef just ignore
+                        if (row.Value.TryGet("ItemDefinition", out FSoftObjectPath itemdefpath) &&
+                            itemdefpath.TryLoad(out UObject? itemdef))
                         {
-                            ItemDef = itemdef,
-                            Weight = weight,
-                            ItemCount = count.X
+                            var count = row.Value.Get<TIntVector2<int>>("CountRange");
+                            if (!ret.LPC.ContainsKey(lpid))
+                                ret.LPC[lpid] = new();
+
+                            ret.LPC[lpid].Add(new LootPackageCall
+                            {
+                                ItemDef = itemdef,
+                                Weight = weight,
+                                ItemCount = count.X
+                            });
+                        }
+                    }
+                    else
+                    {
+                        if (!ret.LP.ContainsKey(lpid))
+                            ret.LP[lpid] = new();
+
+                        ret.LP[lpid].Add(new LootPackage
+                        {
+                            LootPackageCall = lpc,
+                            Weight = weight
                         });
                     }
-                }
-                else
-                {
-                    if (!ret.LP.ContainsKey(lpid))
-                        ret.LP[lpid] = new();
-
-                    ret.LP[lpid].Add(new LootPackage
-                    {
-                        LootPackageCall = lpc,
-                        Weight = weight
-                    });
                 }
             }
 

@@ -33,8 +33,10 @@ namespace FortMapper
         public static Formatting JsonFormatting = Formatting.None;
         [JsonIgnore]
         public static bool OutputActorClasses = false;
+        [JsonIgnore]
+        public static bool OutputActorIcons = true;
 
-        
+
         [JsonIgnore]
         public CTexture? MinimapTexture;
         [JsonIgnore]
@@ -69,20 +71,15 @@ namespace FortMapper
 
             if (pi.Name.Contains("CameraActor") &&
                 pi.TryLoad(out UObject? camera) &&
-                camera is not null &&
                 camera.TryGet("Tags", out FName[]? tags) &&
-                tags is not null &&
-                tags.Length > 0 &&
-                tags[0].PlainText == "MinimapCaptureCamera" &&
+                tags!.Length > 0 && tags[0].PlainText == "MinimapCaptureCamera" &&
                 camera.TryGet("SceneComponent", out USceneComponent? sc) &&
-                sc is not null &&
-                camera.TryGet("CameraComponent", out UCameraComponent? cc) &&
-                cc is not null
+                camera.TryGet("CameraComponent", out UCameraComponent? cc)
             )
             {
-                if (cc.TryGet("RelativeRotation", out FRotator cc_relrot))
+                if (cc!.TryGet("RelativeRotation", out FRotator cc_relrot))
                     CameraRelRot = cc_relrot;
-                CameraPos = sc.GetRelativeLocation();
+                CameraPos = sc!.GetRelativeLocation();
                 CameraRot = sc.GetRelativeRotation();
             }
 
@@ -96,12 +93,22 @@ namespace FortMapper
 
                 foreach (var class_name in ActorsToExport)
                 {
+                    bool exported_icon = false;
                     if (pi.ResolvedObject.Class.Name.PlainText == class_name &&
-                        pi.ResolvedObject.TryLoad(out UObject actor) &&
-                        actor.TryGet("StaticMeshComponent", out UStaticMeshComponent? smc) && smc is not null
-                        )
+                        pi.ResolvedObject.TryLoad(out UObject actor))
                     {
-                        Actors[class_name].Add(smc.GetRelativeLocation());
+                        if (actor.TryGetValue(out USceneComponent? smc, "StaticMeshComponent", "RootComponent", "Root"))
+                        {
+                            Actors[class_name].Add(smc!.GetRelativeLocation());
+                        }
+
+                        if (OutputActorIcons && !exported_icon && ((UClass)actor.Class!).ClassDefaultObject.TryLoad(out var actorclassdefault) && 
+                            actorclassdefault.TryGet("MarkerDisplay", out FStructFallback? md) &&
+                            md!.TryGet("Icon", out FSoftObjectPath iconpath) && iconpath.TryLoad<UTexture2D>(out UTexture2D? icon_texture))
+                        {
+                            File.WriteAllBytes(Path.Join(OutPath, $"{actor.Class!.Name}.png"), icon_texture!.Decode()!.Encode(ETextureFormat.Png, out string ext));
+                            exported_icon = true;
+                        }
                     }
                 }
                     
@@ -122,7 +129,7 @@ namespace FortMapper
 
             if (export_minimap)
             {
-                var icondecode = MinimapTexture?.ToSkBitmap();
+                var icondecode = MinimapTexture?.ToSkBitmap ();
                 if (icondecode is not null)
                 {
                     using (var image = SKImage.FromBitmap(icondecode))

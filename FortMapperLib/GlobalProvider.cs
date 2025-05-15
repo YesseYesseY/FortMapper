@@ -11,6 +11,7 @@ using CUE4Parse.MappingsProvider;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Objects.Core.Misc;
 using CUE4Parse.UE4.Versions;
+using CUE4Parse_Conversion.Textures.BC;
 
 namespace FortMapper
 {
@@ -21,6 +22,8 @@ namespace FortMapper
         {
             OodleHelper.DownloadOodleDll();
             OodleHelper.Initialize(OodleHelper.OODLE_DLL_NAME);
+            DetexHelper.LoadDll();
+            DetexHelper.Initialize(DetexHelper.DLL_NAME);
 
             _provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
             _provider.Initialize();
