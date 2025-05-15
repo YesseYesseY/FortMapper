@@ -1,5 +1,7 @@
 /** @type HTMLCanvasElement */
 const canvas = document.getElementById("canvas");
+/** @type HTMLDivElement */
+const actorButtons = document.getElementById("actor-buttons");
 /** @type CanvasRenderingContext2D */
 const ctx = canvas.getContext("2d");
 
@@ -22,6 +24,7 @@ jsoninput.addEventListener("change", (e) => {
         world = JSON.parse(e.target.result);
         jsoninput.style.display = "None";
         canvas.style.display = "Block";
+        actorButtons.style.display = "block";
         maindraw();
 
     });
@@ -61,21 +64,36 @@ function get_map_pos(pos) {
 }
 
 function drawMap() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(mapimage, imgX, imgY, baseImageSize * imgZoom, baseImageSize * imgZoom);
+    ctx.clearRect(0, 0, canvas.width, canvas.height),
+        ctx.drawImage(mapimage, imgX, imgY, baseImageSize * imgZoom, baseImageSize * imgZoom);
     for (let j = 0; j < actornames.length; j++) {
+        // ctx.fillStyle = "red";// '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
         for (let i = 0; i < world.actors[actornames[j]].length; i++) {
-            let map_pos = get_map_pos(world.actors[actornames[j]][i]);
+            if (world.actors[actornames[j]].disabled) continue;
 
+            let map_pos = get_map_pos(world.actors[actornames[j]][i]);
             ctx.drawImage(actorimages[actornames[j]], map_pos.x + imgX - (iconSize / 2), map_pos.y + imgY - (iconSize / 2), iconSize, iconSize);
+
+            // ctx.beginPath();
+            // ctx.arc(map_pos.x + imgX, map_pos.y + imgY, 2.5, 0, 2 * Math.PI);
+            // ctx.fill();
+
         }
     }
+}
+
+function toggleActor(actor) {
+    world.actors[actor].disabled = !world.actors[actor].disabled;
+    drawMap();
 }
 
 function maindraw() {
     actornames = Object.keys(world.actors);
 
     for (let i = 0; i < actornames.length; i++) {
+        world.actors[actornames[i]].disabled = true;
+        actorButtons.innerHTML += `<input id="toggle-${i}" onclick="toggleActor('${actornames[i]}')" type="checkbox"><label onclick="document.getElementById('toggle-${i}').click()">${actornames[i]}</label><br>`;
+
         actorimages[actornames[i]] = (() => {
             const actorimg = new Image();
             actorimg.src = `./${actornames[i]}.png`;
