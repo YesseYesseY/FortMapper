@@ -27,7 +27,7 @@ namespace FortMapper
 
             _provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
             _provider.Initialize();
-            _provider.SubmitKey(new FGuid(), new FAesKey("0x17243B0E3E66DA90347F7C4787692505EC5E5285484633D71B09CD6ABB714E9B"));
+            _provider.SubmitKey(new FGuid(), new FAesKey("0x163920F671322A7D00302EF00A4E046AF2C0B4B204BCC035A8CA8869472B2448"));
             _provider.PostMount();
             _provider.LoadVirtualPaths();
         }

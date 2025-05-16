@@ -35,7 +35,8 @@ WorldExport.OutputActorClasses = true;
 WorldExport.ActorsToExport.AddRange(
     "Tiered_Chest_6_Figment_C", "Tiered_Ammo_Figment_C",
     "B_BGA_Athena_EnvCampFire_C",
-    "B_Athena_VendingMachine_Figment_C"
+    "B_Athena_VendingMachine_Figment_C",
+    "BGA_Athena_SCMachine_Figment_C"
     );
 
 var yes = WorldExport.Yes("FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",
@@ -48,7 +49,6 @@ if (yes is null || yes.MinimapTexture is null)
 }
 yes.Export(true);
 
-//ExportUtils.ExportTexture2D("FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T-T-Icon-BR-AmmoBoxMarkIII.T-T-Icon-BR-AmmoBoxMarkIII", "./World/Tiered_Ammo_Figment_C.png");
-//ExportUtils.ExportTexture2D("FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T-T-Icon-BR-SM-Athena-Chest-01.T-T-Icon-BR-SM-Athena-Chest-01", "./World/Tiered_Chest_6_Figment_C.png");
+ExportUtils.ExportTexture2D("FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T_Icon_BR_RebootVan_BuyBack.T_Icon_BR_RebootVan_BuyBack", "./World/BGA_Athena_SCMachine_Figment_C.png");
 
 #endif
