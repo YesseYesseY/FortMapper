@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -43,7 +44,23 @@ namespace FortMapper
         [JsonProperty("loot_package_call")]
         public string LootPackageCall;
     }
-    
+
+    public class TempLootTierData
+    {
+        public float Weight;
+        public string LootPackage;
+        public string TierGroup;
+    }
+
+    public class TempLootPackage
+    {
+        public float Weight;
+        public string LootPackageCall;
+        public string LootPackageId;
+        public FSoftObjectPath ItemDef;
+        public TIntVector2<int> CountRange;
+    }
+
     public struct LootPackageCall
     {
         [JsonProperty("weight")]
@@ -105,7 +122,9 @@ namespace FortMapper
         }
     }
 
-    // NOTE: Only OG loot is seriously tested
+    // NOTE:
+    // * Only OG loot is seriously tested
+    // * This is SUPER messy and i dont feel like making it good right now
     // TODO: (not in order)
     // * Automatically get all the correct datatables from gamefeatures
     public class LootExport
@@ -114,6 +133,7 @@ namespace FortMapper
         public static string OutPath = "./Loot/";
         public static bool OutputItemIcons = true;
         public static Formatting JsonFormatting = Formatting.None;
+        public static string Hotfixes = "";
 
         public Dictionary<string, List<LootTierData>> LTD = new();
         public Dictionary<string, List<LootPackage>> LP = new();
@@ -144,63 +164,159 @@ namespace FortMapper
         {
             var ret = new LootExport();
 
+            Dictionary<string, TempLootTierData> TEMP_LTD = new();
+            Dictionary<string, TempLootPackage> TEMP_LP = new();
+
             foreach (var lootpath in paths)
             {
                 var ltd_package = GlobalProvider.LoadPackageObject<UDataTable>(lootpath.ltd);
                 var lp_package = GlobalProvider.LoadPackageObject<UDataTable>(lootpath.lp);
 
-
                 foreach (var row in ltd_package.RowMap)
                 {
-                    var tg = row.Value.Get<FName>("TierGroup").Text;
-                    var lp = row.Value.Get<FName>("LootPackage").Text;
-                    var weight = row.Value.Get<float>("Weight");
-                    if (weight <= 0.0f) continue;
-
-                    if (!ret.LTD.ContainsKey(tg))
-                        ret.LTD[tg] = new();
-
-                    ret.LTD[tg].Add(new LootTierData { Weight = weight, LootPackage = lp });
+                    TEMP_LTD[row.Key.Text] = new TempLootTierData
+                    {
+                        LootPackage = row.Value.Get<FName>("LootPackage").Text,
+                        Weight = row.Value.Get<float>("Weight"),
+                        TierGroup = row.Value.Get<FName>("TierGroup").Text
+                    };
                 }
 
                 foreach (var row in lp_package.RowMap)
                 {
-                    var lpc = row.Value.Get<string>("LootPackageCall");
-                    var lpid = row.Value.Get<FName>("LootPackageID").Text;
-                    var weight = row.Value.Get<float>("Weight");
-                    if (weight <= 0.0f) continue;
-
-                    if (lpc == "")
+                    TEMP_LP[row.Key.Text] = new TempLootPackage
                     {
-                        // If its WorldList and has no itemdef just ignore
-                        if (row.Value.TryGet("ItemDefinition", out FSoftObjectPath itemdefpath) &&
-                            itemdefpath.TryLoad(out UObject? itemdef))
-                        {
-                            var count = row.Value.Get<TIntVector2<int>>("CountRange");
-                            if (!ret.LPC.ContainsKey(lpid))
-                                ret.LPC[lpid] = new();
+                        ItemDef = row.Value.Get<FSoftObjectPath>("ItemDefinition"),
+                        Weight = row.Value.Get<float>("Weight"),
+                        LootPackageId = row.Value.Get<FName>("LootPackageID").Text,
+                        LootPackageCall  = row.Value.Get<string>("LootPackageCall"),
+                        CountRange = row.Value.Get<TIntVector2<int>>("CountRange")
+                    };
+                }
 
-                            ret.LPC[lpid].Add(new LootPackageCall
-                            {
-                                ItemDef = itemdef,
-                                Weight = weight,
-                                ItemCount = count.X
-                            });
+                List<string> parent_tables = new();
+
+                {
+                    parent_tables.Add(ltd_package.Outer!.GetPathName());
+                    if (ltd_package.TryGet<UObject[]>("ParentTables", out var ptables))
+                    {
+                        foreach (var table in ptables)
+                        {
+                            parent_tables.Add(table.Outer!.GetPathName());
                         }
                     }
-                    else
-                    {
-                        if (!ret.LP.ContainsKey(lpid))
-                            ret.LP[lpid] = new();
 
-                        ret.LP[lpid].Add(new LootPackage
+                    foreach (var line in Hotfixes.Split('\n'))
+                    {
+                        if (line.StartsWith("+DataTable="))
                         {
-                            LootPackageCall = lpc,
-                            Weight = weight
+                            var split = line.Split(';');
+
+                            var hotfixtable = split[0].Substring("+DataTable=".Length);
+
+                            if (!parent_tables.Any(path => hotfixtable == path))
+                                continue;
+
+                            if (split[1] != "RowUpdate")
+                                continue; // throw new NotImplementedException();
+
+                            if (split[3] != "Weight")
+                                continue; // throw new NotImplementedException();
+
+                            TEMP_LTD[split[2]].Weight = float.Parse(split[4], CultureInfo.InvariantCulture);
+                        }
+                    }
+
+                    parent_tables.Clear();
+                }
+
+                {
+                    parent_tables.Add(lp_package.Outer!.GetPathName());
+                    if (lp_package.TryGet<UObject[]>("ParentTables", out var ptables))
+                    {
+                        foreach (var table in ptables)
+                        {
+                            parent_tables.Add(table.Outer!.GetPathName());
+                        }
+                    }
+
+                    foreach (var line in Hotfixes.Split('\n'))
+                    {
+                        if (line.StartsWith("+DataTable="))
+                        {
+                            var split = line.Split(';');
+
+                            var hotfixtable = split[0].Substring("+DataTable=".Length);
+
+                            if (!parent_tables.Any(path => hotfixtable == path))
+                                continue;
+
+                            if (split[1] != "RowUpdate")
+                                continue; // throw new NotImplementedException();
+
+                            if (split[3] != "Weight")
+                                continue; // throw new NotImplementedException();
+
+
+
+                            TEMP_LP[split[2]].Weight = float.Parse(split[4], CultureInfo.InvariantCulture);
+                        }
+                    }
+
+                    parent_tables.Clear();
+                }
+            }
+
+            foreach (var thingy in TEMP_LTD)
+            {
+                var tg = thingy.Value.TierGroup;
+                var lp = thingy.Value.LootPackage;
+                var weight = thingy.Value.Weight;
+                if (weight <= 0.0f) continue;
+
+                if (!ret.LTD.ContainsKey(tg))
+                    ret.LTD[tg] = new();
+
+                ret.LTD[tg].Add(new LootTierData { Weight = weight, LootPackage = lp });
+            }
+
+            foreach (var thingy in TEMP_LP)
+            {
+                var lpc = thingy.Value.LootPackageCall;
+                var lpid = thingy.Value.LootPackageId;
+                var weight = thingy.Value.Weight;
+                if (weight <= 0.0f) continue;
+
+                if (lpc == "")
+                {
+                    // If its WorldList and has no itemdef just ignore
+                    if (thingy.Value.ItemDef.TryLoad(out UObject? itemdef))
+                    {
+                        var count = thingy.Value.CountRange;
+                        if (!ret.LPC.ContainsKey(lpid))
+                            ret.LPC[lpid] = new();
+
+                        ret.LPC[lpid].Add(new LootPackageCall
+                        {
+                            ItemDef = itemdef,
+                            Weight = weight,
+                            ItemCount = count.X
                         });
                     }
                 }
+                else
+                {
+                    if (!ret.LP.ContainsKey(lpid))
+                        ret.LP[lpid] = new();
+
+                    ret.LP[lpid].Add(new LootPackage
+                    {
+                        LootPackageCall = lpc,
+                        Weight = weight
+                    });
+                }
             }
+            
 
             return ret;
         }

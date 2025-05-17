@@ -1,5 +1,6 @@
 const data_input = document.getElementById("data-input");
 const ltd_input = document.getElementById("ltd-input");
+const extra_input = document.getElementById("extra-input");
 const loot_place = document.getElementById("loot-place");
 
 var data = {};
@@ -17,7 +18,8 @@ data_input.addEventListener("change", (e) => {
 
         reader.readAsText(f);
 
-        ltd_input.style.display = "block";
+        ltd_input.style.display = "inline";
+        extra_input.style.display = "inline";
         data_input.style.display = "none";
     });
 });
@@ -111,15 +113,36 @@ ltd_input.addEventListener("change", (e) => {
 
     {
         var total_weight = 0;
-        LTD[e.target.value].forEach((e2) => LPC[LP[e2.loot_package][0].loot_package_call].forEach(e3 => total_weight += e3.weight));
+        var combine_container;
+
+        if (extra_input.value != "local")
+            LTD[e.target.value].forEach((e2) => LPC[LP[e2.loot_package][0].loot_package_call].forEach(e3 => total_weight += e3.weight));
+
+        if (extra_input.value == "combine") {
+            loot_place.innerHTML += `<label>Weapons</label>`;
+            combine_container = document.createElement("div");
+            combine_container.className = "item-container";
+        }
+
         LTD[e.target.value].forEach((e) => {
             const current_lp = LP[e.loot_package];
             const current_lpc = LPC[current_lp[0].loot_package_call];
-            loot_place.innerHTML += `<label>${parse_name(current_lp[0].loot_package_call)}</label>`;
-            const item_container = document.createElement("div");
-            item_container.className = "item-container";
-            parse_lpc(current_lpc, total_weight, item_container);
-            loot_place.appendChild(item_container);
+
+            if (extra_input.value == "combine") {
+                parse_lpc(current_lpc, total_weight, combine_container);
+                loot_place.appendChild(combine_container);
+            } else {
+                if (extra_input.value == "local")
+                    current_lpc.forEach(thing => total_weight += thing.weight);
+
+                loot_place.innerHTML += `<label>${parse_name(current_lp[0].loot_package_call)}</label>`;
+                const item_container = document.createElement("div");
+                item_container.className = "item-container";
+                parse_lpc(current_lpc, total_weight, item_container);
+                loot_place.appendChild(item_container);
+                if (extra_input.value == "local")
+                    total_weight = 0;
+            }
         });
     }
 });

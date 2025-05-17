@@ -15,11 +15,12 @@
         }
 
         .item-card {
+            width: 100px;
             height: auto;
             align-items: center;
             display: flex;
             flex-direction: column;
-            margin: 5px;
+            margin: 10px;
         }
 
         .item-card label {
@@ -28,19 +29,24 @@
         }
 
         .item-card img {
-            width: 100px;
+            width: 100%;
             background: #00DBFB;
             border: 2px solid #222222;
         }
     </style>
 </head>
 <body style="background-color: #666666;">
-    <input multiple type="file" id="data-input"/>
+    <input multiple type="file" id="data-input" />
     <select id="ltd-input" style="display: none;">
         <option value="">Select something pls &lt3</option>
         <option value="Loot_AthenaTreasure">Chest</option>
     </select>
-    
+    <select id="extra-input" style="display: none;">
+        <option value="global">Global Percentage</option>
+        <option value="local">Local Percentage</option>
+        <option value="combine">Combine Weapons</option>
+    </select>
+
     <br />
 
     <div id="loot-place">
