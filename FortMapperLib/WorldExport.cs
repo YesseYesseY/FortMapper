@@ -20,9 +20,32 @@ using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using Newtonsoft.Json;
 using SkiaSharp;
+using CUE4Parse.UE4.Objects.Core.i18N;
 
 namespace FortMapper
 {
+    // NOTE: I doubt anything but pos and orthowidth is really needed... MAYBE rot
+    public class CameraProperties
+    {
+        [JsonProperty("pos")]
+        public Vector3 Pos;
+        [JsonProperty("rot")]
+        public FRotator Rot;
+        [JsonProperty("relrot")]
+        public FRotator RelRot;
+        // All values below are the same on hermes and figment so i see no reason to dynamically get them
+        // Also you prob dont need them
+        [JsonProperty("field_of_view")]
+        public readonly float FieldOfView = 14.0f;
+        [JsonProperty("ortho_width")]
+        public readonly float OrthoWidth = 262426.0f;
+        [JsonProperty("ortho_near_clip_plane")]
+        public readonly float OrthoNearClipPlane = 0.0f;
+        [JsonProperty("ortho_far_clip_plane")]
+        public readonly float OrthoFarClipPlane = 200000.0f;
+        [JsonProperty("aspect_ratio")]
+        public readonly float AspectRatio = 1.0f;
+    }
     public class WorldExport
     {
         [JsonIgnore]
@@ -36,6 +59,8 @@ namespace FortMapper
         [JsonIgnore]
         public static bool OutputActorIcons = true;
 
+        [JsonIgnore]
+        public static UObject? QuestIndicatorData = null;
 
         [JsonIgnore]
         public CTexture? MinimapTexture;
@@ -45,24 +70,10 @@ namespace FortMapper
 
         [JsonProperty("actors")]
         public Dictionary<string, List<Vector3>> Actors = new();
-        [JsonProperty("camera_pos")]
-        public Vector3 CameraPos;
-        [JsonProperty("camera_rot")]
-        public FRotator CameraRot;
-        [JsonProperty("camera_relrot")]
-        public FRotator CameraRelRot;
-        // All values below are the same on hermes and figment so i see no reason to dynamically get them
-        // Also you prob dont need them
-        [JsonProperty("camera_field_of_view")]
-        public readonly float CameraFieldOfView = 14.0f;
-        [JsonProperty("camera_ortho_width")]
-        public readonly float CameraOrthoWidth = 262426.0f;
-        [JsonProperty("camera_ortho_near_clip_plane")]
-        public readonly float CameraOrthoNearClipPlane = 0.0f;
-        [JsonProperty("camera_ortho_far_clip_plane")]
-        public readonly float CameraOrthoFarClipPlane = 200000.0f;
-        [JsonProperty("camera_aspect_ratio")]
-        public readonly float CameraAspectRatio = 1.0f;
+        [JsonProperty("pois")]
+        public Dictionary<string, Vector3> POIs = new();
+        [JsonProperty("camera")]
+        public CameraProperties Camera = new();
 
         private void Parse(FPackageIndex? pi)
         {
@@ -78,9 +89,9 @@ namespace FortMapper
             )
             {
                 if (cc!.TryGet("RelativeRotation", out FRotator cc_relrot))
-                    CameraRelRot = cc_relrot;
-                CameraPos = sc!.GetRelativeLocation();
-                CameraRot = sc.GetRelativeRotation();
+                    Camera.RelRot = cc_relrot;
+                Camera.Pos = sc!.GetRelativeLocation();
+                Camera.Rot = sc.GetRelativeRotation();
             }
 
             if (pi.ResolvedObject is not null && 
@@ -144,6 +155,11 @@ namespace FortMapper
 
         public static WorldExport? Yes(string mappath, string minimappath)
         {
+            if (QuestIndicatorData is null)
+            {
+                QuestIndicatorData = GlobalProvider.LoadPackageObject("FortniteGame/Content/Quests/QuestIndicatorData.QuestIndicatorData");
+            }
+
             var ret = new WorldExport();
             foreach (var class_name in ActorsToExport)
                 ret.Actors[class_name] = new();
@@ -164,6 +180,25 @@ namespace FortMapper
 
                 foreach (var actor in level.Actors)
                     ret.Parse(actor);
+            }
+
+            if (QuestIndicatorData.TryGet("ChallengeMapsPoiData", out UScriptMap? cmpd))
+            {
+                foreach (var mapthing in cmpd!.Properties)
+                {
+                    if (mapthing.Key.GetValue<FName>().PlainText == mapname)
+                    {
+                        var structthing = mapthing.Value!.GetValue<FStructFallback>();
+                        if (structthing!.TryGet("ChallengeMapsPoiData", out FStructFallback[]? cmpd_real))
+                        {
+                            foreach (var poi in cmpd_real!)
+                            {
+                                ret.POIs.Add(poi.Get<FText>("Text").Text, poi.Get<FVector>("WorldLocation"));
+                            }
+                        }
+                        break;
+                    }
+                }
             }
 
             // This works but is kinda scuffed, the other way to do it would be to get it from

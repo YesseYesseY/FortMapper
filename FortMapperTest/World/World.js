@@ -44,37 +44,44 @@ var imgX = canvas.width / 2 - (baseImageSize / 2);
 var imgY = canvas.height / 2 - (baseImageSize / 2);
 var imgZoom = 1;
 var dragging = false;
+var drawPois = false;
 
 function get_map_pos(pos) {
-    let relative = [pos.X - world.camera_pos.X, pos.Y - world.camera_pos.Y];
+    let relative = [pos.X - world.camera.pos.X, pos.Y - world.camera.pos.Y];
 
-    let rot = -((world.camera_rot.Roll + manual_rotation) * (Math.PI / 180));
+    let rot = -((world.camera.rot.Roll + manual_rotation) * (Math.PI / 180));
     let cos = Math.cos(rot);
     let sin = Math.sin(rot);
     let rotatedX = relative[0] * cos - relative[1] * sin;
     let rotatedY = relative[0] * sin + relative[1] * cos;
 
     return {
-        x: (rotatedX / world.camera_ortho_width + 0.5) * baseImageSize * imgZoom,
-        y: (rotatedY / world.camera_ortho_width + 0.5) * baseImageSize * imgZoom,
+        x: (rotatedX / world.camera.ortho_width + 0.5) * baseImageSize * imgZoom,
+        y: (rotatedY / world.camera.ortho_width + 0.5) * baseImageSize * imgZoom,
     }
 }
 
 function drawMap() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height),
-        ctx.drawImage(mapimage, imgX, imgY, baseImageSize * imgZoom, baseImageSize * imgZoom);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(mapimage, imgX, imgY, baseImageSize * imgZoom, baseImageSize * imgZoom);
+
+    ctx.font = "bold 18px arial";
+    ctx.fillStyle = "black";
+    if (drawPois) {
+        for (const [poiname, poilocation] of Object.entries(world.pois)) {
+            let map_pos = get_map_pos(poilocation);
+            ctx.textAlign = "center";
+            ctx.fillText(poiname, map_pos.x + imgX, map_pos.y + imgY);
+            //ctx.strokeText(poiname, map_pos.x + imgX, map_pos.y + imgY);
+        }
+    }
+
     for (let j = 0; j < actornames.length; j++) {
-        // ctx.fillStyle = "red";// '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
         for (let i = 0; i < world.actors[actornames[j]].length; i++) {
             if (world.actors[actornames[j]].disabled) continue;
 
             let map_pos = get_map_pos(world.actors[actornames[j]][i]);
             ctx.drawImage(actorimages[actornames[j]], map_pos.x + imgX - (iconSize / 2), map_pos.y + imgY - (iconSize / 2), iconSize, iconSize);
-
-            // ctx.beginPath();
-            // ctx.arc(map_pos.x + imgX, map_pos.y + imgY, 2.5, 0, 2 * Math.PI);
-            // ctx.fill();
-
         }
     }
 }
@@ -98,6 +105,8 @@ function maindraw() {
             return actorimg;
         })();
     }
+
+    actorButtons.innerHTML += `<input id="toggle-poi" onclick="drawPois = !drawPois;drawMap();" type="checkbox"><label onclick="document.getElementById('toggle-poi').click()">Draw POIs</label><br>`;
 
     canvas.addEventListener("wheel", (e) => {
         const oldZoom = imgZoom;
