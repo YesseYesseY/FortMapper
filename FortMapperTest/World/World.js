@@ -7,9 +7,11 @@ const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-
-const mapimage = new Image(2048, 2048);
-mapimage.src = "./map.png";
+window.addEventListener("resize", (e) => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    drawMap();
+});
 
 var world = {};
 
@@ -23,7 +25,6 @@ jsoninput.addEventListener("change", (e) => {
     reader.addEventListener("load", (e) => {
         world = JSON.parse(e.target.result);
         jsoninput.style.display = "None";
-        canvas.style.display = "Block";
         actorButtons.style.display = "block";
         maindraw();
 
@@ -91,23 +92,11 @@ function toggleActor(actor) {
     drawMap();
 }
 
-function maindraw() {
-    actornames = Object.keys(world.actors);
-
-    for (let i = 0; i < actornames.length; i++) {
-        world.actors[actornames[i]].disabled = true;
-        actorButtons.innerHTML += `<input id="toggle-${i}" onclick="toggleActor('${actornames[i]}')" type="checkbox"><label onclick="document.getElementById('toggle-${i}').click()">${actornames[i]}</label><br>`;
-
-        actorimages[actornames[i]] = (() => {
-            const actorimg = new Image();
-            actorimg.src = `./${actornames[i]}.png`;
-            actorimg.addEventListener("load", () => drawMap());
-            return actorimg;
-        })();
-    }
-
-    actorButtons.innerHTML += `<input id="toggle-poi" onclick="drawPois = !drawPois;drawMap();" type="checkbox"><label onclick="document.getElementById('toggle-poi').click()">Draw POIs</label><br>`;
-
+const mapimage = new Image(2048, 2048);
+mapimage.src = "./map.png";
+mapimage.addEventListener("load", () => {
+    drawMap();
+    canvas.style.display = "Block";
     canvas.addEventListener("wheel", (e) => {
         const oldZoom = imgZoom;
         const canvasCenterX = canvas.width / 2;
@@ -134,9 +123,23 @@ function maindraw() {
             drawMap();
         }
     });
-    window.addEventListener("resize", (e) => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        drawMap();
-    });
+});
+
+function maindraw() {
+    actornames = Object.keys(world.actors);
+
+    for (let i = 0; i < actornames.length; i++) {
+        world.actors[actornames[i]].disabled = true;
+        actorButtons.innerHTML += `<input id="toggle-${i}" onclick="toggleActor('${actornames[i]}')" type="checkbox"><label onclick="document.getElementById('toggle-${i}').click()">${actornames[i]}</label><br>`;
+
+        actorimages[actornames[i]] = (() => {
+            const actorimg = new Image();
+            actorimg.src = `./${actornames[i]}.png`;
+            actorimg.addEventListener("load", () => drawMap());
+            return actorimg;
+        })();
+    }
+
+    actorButtons.innerHTML += `<input id="toggle-poi" onclick="drawPois = !drawPois;drawMap();" type="checkbox"><label onclick="document.getElementById('toggle-poi').click()">Draw POIs</label><br>`;
+
 }

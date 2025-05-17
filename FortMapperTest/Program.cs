@@ -8,14 +8,13 @@ using Newtonsoft.Json;
 
 GlobalProvider.Init();
 
-#if false
+#if true
 LootExport.Yes(
 #if true // OG ZB
     ("FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LTD_Figment.NoBuild_Composite_LTD_Figment",
      "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LP_Figment.NoBuild_Composite_LP_Figment")
 #endif
 
-// TODO: Check if theres a better way to do this
 #if false // BR
     ("FortniteGame/Content/Athena/Playlists/AthenaCompositeLTD.AthenaCompositeLTD",
      "FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/AthenaCompositeLP.AthenaCompositeLP"),
@@ -28,7 +27,7 @@ LootExport.Yes(
 ).Export(true);
 #endif
 
-#if true
+#if false
 
 WorldExport.JsonFormatting = Formatting.Indented;
 WorldExport.OutputActorClasses = true;

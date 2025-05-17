@@ -61,10 +61,48 @@ namespace FortMapper
                 return "No name :)";
             }
         }
+        [JsonIgnore]
+        private UTexture2D? _ItemIcon;
+        [JsonIgnore]
+        public UTexture2D? ItemIcon
+        {
+            get
+            {
+                if (_ItemIcon is not null)
+                    return _ItemIcon;
+
+                if (ItemDef.TryGet("DataList", out FInstancedStruct[]? dl))
+                {
+                    foreach (var thing in dl!)
+                    {
+                        if (thing.NonConstStruct!.TryGetValue(out FSoftObjectPath iconpath, "LargeIcon", "Icon") &&
+                            iconpath.TryLoad<UTexture2D>(out UTexture2D? icon))
+                        {
+                            _ItemIcon = icon;
+                            return icon;
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
         [JsonProperty("item_rarity")]
         public string ItemRarity => ItemDef.GetOrDefault("Rarity", EFortRarity.Uncommon).ToString();
         [JsonProperty("item_count")]
         public int ItemCount;
+        [JsonProperty("item_icon")]
+        public string ItemIconPath
+        {
+            get
+            {
+                if (ItemIcon is null) return "";
+                var ret = $"{ItemIcon.Name}.png";
+                foreach (var c in Path.GetInvalidFileNameChars())
+                    ret.Replace(c, '_');
+                return Path.Join("Images", ret).Replace('\\', '/');
+            }
+        }
     }
 
     // NOTE: Only OG loot is seriously tested
@@ -81,45 +119,25 @@ namespace FortMapper
         public Dictionary<string, List<LootPackage>> LP = new();
         public Dictionary<string, List<LootPackageCall>> LPC = new();
         
-        private static void SaveItemIcon(UObject itemdef)
+        private static void SaveItemIcon(LootPackageCall lpc)
         {
-            if (itemdef.TryGet("DataList", out FInstancedStruct[]? dl) && dl is not null)
-            {
-                foreach (var thing in dl)
-                {
-                    if (thing.NonConstStruct!.TryGet("LargeIcon", out FSoftObjectPath iconpath) &&
-                        iconpath.TryLoad<UTexture2D>(out UTexture2D? icon))
-                    {
-                        var iconoutpath = $"{OutPath}/{icon.Name}.png";
-                        if (File.Exists(iconoutpath))
-                            continue;
+            var iconoutpath = Path.Join(OutPath, lpc.ItemIconPath);
+            if (File.Exists(iconoutpath) || lpc.ItemIcon is null)
+                return;
 
-                        var icondecode = icon.Decode()?.ToSkBitmap();
-                        if (icondecode is not null)
-                        {
-                            using (var image = SKImage.FromBitmap(icondecode))
-                            using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
-                            using (var stream = File.OpenWrite(iconoutpath))
-                            {
-                                data.SaveTo(stream);
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
+            ExportUtils.ExportTexture2D(lpc.ItemIcon, iconoutpath);
         }
 
         public void Export(bool export_icons = false)
         {
-            Directory.CreateDirectory(OutPath);
+            Directory.CreateDirectory(Path.Join(OutPath, "Images"));
             File.WriteAllText(Path.Join(OutPath, "LTD.json"), JsonConvert.SerializeObject(LTD, JsonFormatting));
             File.WriteAllText(Path.Join(OutPath, "LP.json"), JsonConvert.SerializeObject(LP, JsonFormatting));
             File.WriteAllText(Path.Join(OutPath, "LPC.json"), JsonConvert.SerializeObject(LPC, JsonFormatting));
             if (export_icons)
                 foreach (var thing in LPC.Values)
                     foreach (var thingy in thing)
-                        SaveItemIcon(thingy.ItemDef);
+                        SaveItemIcon(thingy);
         }
 
         public static LootExport Yes(params (string ltd, string lp)[] paths)

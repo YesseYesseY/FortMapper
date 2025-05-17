@@ -12,6 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Loot\Loot.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Loot\Loot.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

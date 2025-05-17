@@ -10,15 +10,20 @@ namespace FortMapper
 {
     public static class ExportUtils
     {
+        public static void ExportTexture2D(UTexture2D texture, string? out_path)
+        {
+            if (out_path is null)
+                out_path = $"./{texture.Name}.png";
+
+            File.WriteAllBytes(out_path, texture.Decode()!.Encode(ETextureFormat.Png, out string ext));
+        }
+
         public static void ExportTexture2D(string texture_path, string? out_path)
         {
             if (!GlobalProvider._provider.TryLoadPackageObject<UTexture2D>(texture_path, out UTexture2D? texture_obj))
                 return;
 
-            if (out_path is null)
-                out_path = $"./{texture_obj.Name}.png";
-
-            File.WriteAllBytes(out_path, texture_obj.Decode()!.Encode(ETextureFormat.Png, out string ext));
+            ExportTexture2D(texture_obj, out_path);
         }
     }
 }
