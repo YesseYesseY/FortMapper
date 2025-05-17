@@ -7,13 +7,27 @@ var data = {};
 
 data_input.addEventListener("change", (e) => {
     Object.values(e.target.files).forEach((f) => {
-        console.log(f);
-
         const reader = new FileReader();
         
         reader.addEventListener("load", (e) => {
-            console.log(f.name.replace(".json", ""));
-            data[f.name.replace(".json", "")] = JSON.parse(e.target.result);
+            const nametoadd = f.name.replace(".json", "");
+            data[nametoadd] = JSON.parse(e.target.result);
+
+            // TODO: IDK WHERE TF WorldPKG.AthenaLoot.Ammo IS OR IF IT EXISTS AT ALL SO THIS WILL HAVE TO DO
+            if (nametoadd == "LP") {
+                data[nametoadd]["WorldPKG.AthenaLoot.Ammo"] = [
+                    {
+                        "weight": 1,
+                        "loot_package_call": "WorldList.AthenaLoot.Ammo"
+                    }
+                ];
+                data[nametoadd]["WorldPKG.AthenaLoot.Resources"] = [
+                    {
+                        "weight": 1,
+                        "loot_package_call": "WorldList.AthenaLoot.Resources"
+                    }
+                ];
+            }
         });
 
         reader.readAsText(f);
@@ -59,6 +73,16 @@ const translation_table = {
     "WorldList.AthenaLoot.Resources": "Resources",
     "WorldList.AthenaWadChests": "Gold",
     "WorldList.AthenaTraps": "Traps",
+    "WorldList.AthenaSupplyDropConsumables": "Consumables",
+    "WorldList.AthenaLoot.SupplyDropResources": "Resources",
+    "WorldList.AthenaSupplyDropTraps": "Traps",
+    "WorldList.AthenaSupplyDrop.Weapon.Assault": "Assault Rifles",
+    "WorldList.AthenaSupplyDrop.Weapon.Rocket": "Explosives",
+    "WorldList.AthenaSupplyDrop.Weapon.Sniper": "Snipers",
+    "WorldList.AthenaSupplyDrop.Weapon.Shotgun": "Shotguns",
+    "WorldList.AthenaSupplyDrop.Weapon.Handgun": "Pistols",
+    "WorldList.AthenaSupplyDrop.Weapon.SMG": "SMGs",
+    "WorldList.AthenaLoot.Empty": "Empty",
     "Handmade": "Common",
     "Sturdy": "Rare",
     "Quality": "Epic",
@@ -73,29 +97,40 @@ function parse_rarity(rarity) {
     return rarity in rarity_colors ? `radial-gradient(${rarity_colors[rarity][0]}, ${rarity_colors[rarity][3]})` : "#888888";
 }
 
-function create_item_card(e, total_weight) {
+function create_item_card(e, ltd_prob, weight2) {
     const item_card = Object.assign(document.createElement("div"), { className: "item-card" });
     const item_card_img = Object.assign(document.createElement("img"), { src: e.item_icon, draggable: false, });
     item_card_img.style.background = parse_rarity(e.item_rarity);
+    const item_name_label = Object.assign(document.createElement("label"), { innerText: (e.item_count != 1 ? `${e.item_count}x ` : "") + e.item_name });
     item_card.append(
-        Object.assign(document.createElement("label"), { innerText: (((e.weight / total_weight) * 100).toFixed(2)) + "%" }),
+        Object.assign(document.createElement("label"), { innerText: ((((e.weight / weight2) * (ltd_prob)) * 100).toFixed(2)) + "%" }),
         item_card_img,
-        Object.assign(document.createElement("label"), { innerText: e.item_name })
+        item_name_label
     );
     return item_card;
 }
 
-function parse_lpc(lpc, total_weight, item_container) {
-    lpc.forEach(e => item_container.appendChild(create_item_card(e, total_weight)));
+function parse_lpc(lpc, item_container, ltd_prob) {
+    var w2 = 0;
+    lpc.forEach(e => w2 += e.weight);
+    lpc.forEach(e => item_container.appendChild(create_item_card(e, ltd_prob, w2)));
 }
 
 ltd_input.addEventListener("change", (e) => {
-    console.log("change");
     const LTD = data["LTD"];
     const LP = data["LP"];
     const LPC = data["LPC"];
+
     loot_place.innerHTML = "";
 
+    if (e.target.value == "") return;
+
+    const ltdinputval = e.target.value;
+
+    var ltd_total_weight = 0;
+    LTD[e.target.value].forEach((e) => ltd_total_weight += e.weight);
+
+    if (e.target.value == "Loot_AthenaTreasure" || e.target.value == "Loot_AthenaSupplyDrop")
     {
         const current_lp = LP[LTD[e.target.value][0].loot_package];
         for (let i = 2; i < current_lp.length; i++) {
@@ -107,42 +142,54 @@ ltd_input.addEventListener("change", (e) => {
 
             var total_weight = 0;
             current_lpc.forEach(thing => total_weight += thing.weight);
-            parse_lpc(current_lpc, total_weight, item_container);
+            parse_lpc(current_lpc, item_container, 1);
         }
     }
 
-    {
-        var total_weight = 0;
-        var combine_container;
+    var total_weight = 0;
+    var combine_container;
 
-        if (extra_input.value != "local")
-            LTD[e.target.value].forEach((e2) => LPC[LP[e2.loot_package][0].loot_package_call].forEach(e3 => total_weight += e3.weight));
-
-        if (extra_input.value == "combine") {
-            loot_place.innerHTML += `<label>Weapons</label>`;
-            combine_container = document.createElement("div");
-            combine_container.className = "item-container";
-        }
-
-        LTD[e.target.value].forEach((e) => {
-            const current_lp = LP[e.loot_package];
-            const current_lpc = LPC[current_lp[0].loot_package_call];
-
-            if (extra_input.value == "combine") {
-                parse_lpc(current_lpc, total_weight, combine_container);
-                loot_place.appendChild(combine_container);
-            } else {
-                if (extra_input.value == "local")
-                    current_lpc.forEach(thing => total_weight += thing.weight);
-
-                loot_place.innerHTML += `<label>${parse_name(current_lp[0].loot_package_call)}</label>`;
-                const item_container = document.createElement("div");
-                item_container.className = "item-container";
-                parse_lpc(current_lpc, total_weight, item_container);
-                loot_place.appendChild(item_container);
-                if (extra_input.value == "local")
-                    total_weight = 0;
+    if (extra_input.value != "local") {
+        LTD[e.target.value].forEach((e2) => {
+            if (e2.loot_package.startsWith("WorldList")) {
+                LPC[e2.loot_package].forEach(e3 => total_weight += e3.weight);
+            }
+            else {
+                LPC[LP[e2.loot_package][0].loot_package_call].forEach(e3 => total_weight += e3.weight);
             }
         });
     }
+
+    const isLlama = e.target.value == "Loot_AthenaLlama";
+
+    LTD[e.target.value].forEach((e) => {
+        console.log(e);
+        const current_lp = LP[e.loot_package];
+        const lp_is_lpc = e.loot_package.startsWith("WorldList");
+        var current_lpc = lp_is_lpc ? LPC[e.loot_package] : LPC[current_lp[0].loot_package_call];
+
+        if (!e.loot_package.startsWith("WorldList"))
+        {
+            for (let i = 0; i < current_lp.length; i++) {
+                const e2 = current_lp[i];
+                if (extra_input.value == "local")
+                    current_lpc.forEach(thing => total_weight += thing.weight);
+
+                current_lpc = LPC[e2.loot_package_call];
+
+                loot_place.innerHTML += `<label>${parse_name(e2.loot_package_call)} (${((e.weight / ltd_total_weight) * 100).toFixed(2)}%)</label>`;
+                const item_container = document.createElement("div");
+                item_container.className = "item-container";
+                parse_lpc(current_lpc, item_container, e.weight / ltd_total_weight);
+                loot_place.appendChild(item_container);
+
+                if (extra_input.value == "local")
+                    total_weight = 0;
+
+                if (ltdinputval != "Loot_AthenaLlama") break;
+            }
+        }
+    });
+    
+    
 });

@@ -90,10 +90,9 @@ namespace FortMapper
 
                 if (ItemDef.TryGet("DataList", out FInstancedStruct[]? dl))
                 {
-                    foreach (var thing in dl!)
+                    foreach (var thing in dl!.Reverse())
                     {
-                        if (thing.NonConstStruct!.TryGetValue(out FSoftObjectPath iconpath, "LargeIcon", "Icon") &&
-                            iconpath.TryLoad<UTexture2D>(out UTexture2D? icon))
+                        if (thing.NonConstStruct!.TryGetValue(out FSoftObjectPath iconpath, "LargeIcon", "Icon") && iconpath.TryLoad<UTexture2D>(out UTexture2D? icon))
                         {
                             _ItemIcon = icon;
                             return icon;
@@ -126,6 +125,7 @@ namespace FortMapper
     // * Only OG loot is seriously tested
     // * This is SUPER messy and i dont feel like making it good right now
     // TODO: (not in order)
+    // * LootPackageCategoryMinArray
     // * Automatically get all the correct datatables from gamefeatures
     public class LootExport
     {
