@@ -49,6 +49,6 @@ if (yes is null || yes.MinimapTexture is null)
 }
 yes.Export(true);
 
-ExportUtils.ExportTexture2D("FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T_Icon_BR_RebootVan_BuyBack.T_Icon_BR_RebootVan_BuyBack", "./World/BGA_Athena_SCMachine_Figment_C.png");
+ExportUtils.ExportTexture2D("FortniteGame/Plugins/GameFeatures/Creative/Devices/CRD_RebootVan/Content/SetupAssets/ID/T_Icon_PS_CP_Device_RebootVan.T_Icon_PS_CP_Device_RebootVan", "./World/BGA_Athena_SCMachine_Figment_C.png");
 
 #endif

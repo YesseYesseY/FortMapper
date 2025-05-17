@@ -36,12 +36,9 @@ const actorimages = {};
 let actornames = [];
 
 const manual_rotation = 90;
-const zoomMult = 0.15;
+const zoomMult = 1.15;
 const iconSize = 32;
 const baseImageSize = 1000;
-
-const canvasCenterX = canvas.width / 2;
-const canvasCenterY = canvas.height / 2;
 
 var imgX = canvas.width / 2 - (baseImageSize / 2);
 var imgY = canvas.height / 2 - (baseImageSize / 2);
@@ -104,8 +101,10 @@ function maindraw() {
 
     canvas.addEventListener("wheel", (e) => {
         const oldZoom = imgZoom;
+        const canvasCenterX = canvas.width / 2;
+        const canvasCenterY = canvas.height / 2;
 
-        e.deltaY < 0 ? imgZoom += zoomMult : imgZoom -= zoomMult;
+        e.deltaY < 0 ? imgZoom *= zoomMult : imgZoom /= zoomMult;
 
         imgX = canvasCenterX - ((canvasCenterX - imgX) / oldZoom) * imgZoom;
         imgY = canvasCenterY - ((canvasCenterY - imgY) / oldZoom) * imgZoom;
@@ -125,5 +124,10 @@ function maindraw() {
             imgY += e.movementY;
             drawMap();
         }
-    })
+    });
+    window.addEventListener("resize", (e) => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        drawMap();
+    });
 }
