@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 GlobalProvider.Init();
 
-#if true
+#if false
 
 LootExport.Hotfixes = @"
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaFloorLoot_07;Weight;0.000000
@@ -49,8 +49,8 @@ LootExport.Yes(
     ("FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LTD_Figment.NoBuild_Composite_LTD_Figment",
      "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LP_Figment.NoBuild_Composite_LP_Figment")
 #endif
-    //"FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
-    "FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo"
+    "FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
+//"FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo"
 
 #if false // BR
     ("FortniteGame/Content/Athena/Playlists/AthenaCompositeLTD.AthenaCompositeLTD",
@@ -64,7 +64,7 @@ LootExport.Yes(
 ).Export(true);
 #endif
 
-#if false
+#if true
 
 WorldExport.JsonFormatting = Formatting.Indented;
 WorldExport.OutputActorClasses = true;
@@ -72,11 +72,18 @@ WorldExport.ActorsToExport.AddRange(
     "Tiered_Chest_6_Figment_C", "Tiered_Ammo_Figment_C",
     "B_BGA_Athena_EnvCampFire_C",
     "B_Athena_VendingMachine_Figment_C",
-    "BGA_Athena_SCMachine_Figment_C"
+    "BGA_Athena_SCMachine_Figment_C",
+    "Tiered_Chest_Athena_C",
+    "Tiered_Ammo_Athena_C"
     );
 
-var yes = WorldExport.Yes("FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",
-    "FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_MapUI/Content/MiniMapAthena_S03.MiniMapAthena_S03");
+var yes = WorldExport.Yes(
+    //"FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",
+    //"FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_MapUI/Content/MiniMapAthena_S03.MiniMapAthena_S03"
+
+    "FortniteGame/Plugins/GameFeatures/BRMapCh6/Content/Maps/Hermes_Terrain.Hermes_Terrain",
+    "FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap.Apollo_Terrain_Minimap"
+    );
 
 if (yes is null || yes.MinimapTexture is null)
 {

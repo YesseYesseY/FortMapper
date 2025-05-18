@@ -33,12 +33,12 @@ namespace FortMapper
         public FRotator Rot;
         [JsonProperty("relrot")]
         public FRotator RelRot;
+        [JsonProperty("ortho_width")]
+        public float OrthoWidth;
         // All values below are the same on hermes and figment so i see no reason to dynamically get them
         // Also you prob dont need them
         [JsonProperty("field_of_view")]
         public readonly float FieldOfView = 14.0f;
-        [JsonProperty("ortho_width")]
-        public readonly float OrthoWidth = 262426.0f;
         [JsonProperty("ortho_near_clip_plane")]
         public readonly float OrthoNearClipPlane = 0.0f;
         [JsonProperty("ortho_far_clip_plane")]
@@ -92,6 +92,7 @@ namespace FortMapper
                     Camera.RelRot = cc_relrot;
                 Camera.Pos = sc!.GetRelativeLocation();
                 Camera.Rot = sc.GetRelativeRotation();
+                Camera.OrthoWidth = cc!.Get<float>("OrthoWidth");
             }
 
             if (pi.ResolvedObject is not null && 
@@ -193,7 +194,8 @@ namespace FortMapper
                         {
                             foreach (var poi in cmpd_real!)
                             {
-                                ret.POIs.Add(poi.Get<FText>("Text").Text, poi.Get<FVector>("WorldLocation"));
+                                // TODO: Fix duplicate names
+                                ret.POIs[poi.Get<FText>("Text").Text] = poi.Get<FVector>("WorldLocation");
                             }
                         }
                         break;
