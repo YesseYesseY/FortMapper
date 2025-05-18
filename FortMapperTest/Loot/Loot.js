@@ -5,39 +5,6 @@ const loot_place = document.getElementById("loot-place");
 
 var data = {};
 
-data_input.addEventListener("change", (e) => {
-    Object.values(e.target.files).forEach((f) => {
-        const reader = new FileReader();
-        
-        reader.addEventListener("load", (e) => {
-            const nametoadd = f.name.replace(".json", "");
-            data[nametoadd] = JSON.parse(e.target.result);
-
-            // TODO: IDK WHERE TF WorldPKG.AthenaLoot.Ammo IS OR IF IT EXISTS AT ALL SO THIS WILL HAVE TO DO
-            if (nametoadd == "LP") {
-                data[nametoadd]["WorldPKG.AthenaLoot.Ammo"] = [
-                    {
-                        "weight": 1,
-                        "loot_package_call": "WorldList.AthenaLoot.Ammo"
-                    }
-                ];
-                data[nametoadd]["WorldPKG.AthenaLoot.Resources"] = [
-                    {
-                        "weight": 1,
-                        "loot_package_call": "WorldList.AthenaLoot.Resources"
-                    }
-                ];
-            }
-        });
-
-        reader.readAsText(f);
-
-        ltd_input.style.display = "inline";
-        extra_input.style.display = "inline";
-        data_input.style.display = "none";
-    });
-});
-
 const rarity_colors = {
     "Handmade": ["#D9D9D9", "#B7BFC5", "#747A80", "#40464D", "#272834"],
     "Uncommon": ["#A1FE00", "#61BF00", "#008005", "#024F03", "#023302"],
@@ -86,8 +53,41 @@ const translation_table = {
     "Handmade": "Common",
     "Sturdy": "Rare",
     "Quality": "Epic",
-    "Fine": "Legendary"
+    "Fine": "Legendary",
 };
+
+data_input.addEventListener("change", (e) => {
+    Object.values(e.target.files).forEach((f) => {
+        const reader = new FileReader();
+
+        reader.addEventListener("load", (e) => {
+            const nametoadd = f.name.replace(".json", "");
+            data[nametoadd] = JSON.parse(e.target.result);
+
+            // TODO: IDK WHERE TF WorldPKG.AthenaLoot.Ammo IS OR IF IT EXISTS AT ALL SO THIS WILL HAVE TO DO
+            if (nametoadd == "LP") {
+                data[nametoadd]["WorldPKG.AthenaLoot.Ammo"] = [
+                    {
+                        "weight": 1,
+                        "loot_package_call": "WorldList.AthenaLoot.Ammo"
+                    }
+                ];
+                data[nametoadd]["WorldPKG.AthenaLoot.Resources"] = [
+                    {
+                        "weight": 1,
+                        "loot_package_call": "WorldList.AthenaLoot.Resources"
+                    }
+                ];
+            }
+        });
+
+        reader.readAsText(f);
+
+        ltd_input.style.display = "inline";
+        extra_input.style.display = "inline";
+        data_input.style.display = "none";
+    });
+});
 
 function parse_name(name) {
     return name in translation_table ? translation_table[name] : name;
@@ -98,10 +98,13 @@ function parse_rarity(rarity) {
 }
 
 function create_item_card(e, ltd_prob, weight2) {
+    const is_empty = e.item_count == 0;
     const item_card = Object.assign(document.createElement("div"), { className: "item-card" });
-    const item_card_img = Object.assign(document.createElement("img"), { src: e.item_icon, draggable: false, });
+    const item_card_img = Object.assign(document.createElement("img"), { draggable: false, });
+    if (!is_empty)
+        item_card_img.src = e.item_icon;
     item_card_img.style.background = parse_rarity(e.item_rarity);
-    const item_name_label = Object.assign(document.createElement("label"), { innerText: (e.item_count != 1 ? `${e.item_count}x ` : "") + e.item_name });
+    const item_name_label = Object.assign(document.createElement("label"), { innerText: is_empty ? "Empty" : (e.item_count != 1 ? `${e.item_count}x ` : "") + e.item_name });
     item_card.append(
         Object.assign(document.createElement("label"), { innerText: ((((e.weight / weight2) * (ltd_prob)) * 100).toFixed(2)) + "%" }),
         item_card_img,
@@ -160,16 +163,13 @@ ltd_input.addEventListener("change", (e) => {
         });
     }
 
-    const isLlama = e.target.value == "Loot_AthenaLlama";
-
     LTD[e.target.value].forEach((e) => {
         console.log(e);
         const current_lp = LP[e.loot_package];
         const lp_is_lpc = e.loot_package.startsWith("WorldList");
         var current_lpc = lp_is_lpc ? LPC[e.loot_package] : LPC[current_lp[0].loot_package_call];
 
-        if (!e.loot_package.startsWith("WorldList"))
-        {
+        if (!e.loot_package.startsWith("WorldList")) {
             for (let i = 0; i < current_lp.length; i++) {
                 const e2 = current_lp[i];
                 if (extra_input.value == "local")
@@ -186,8 +186,22 @@ ltd_input.addEventListener("change", (e) => {
                 if (extra_input.value == "local")
                     total_weight = 0;
 
-                if (ltdinputval != "Loot_AthenaLlama") break;
+                if (LTD[ltdinputval].length != 1) break;
             }
+        } else {
+            if (extra_input.value == "local")
+                current_lpc.forEach(thing => total_weight += thing.weight);
+
+            current_lpc = LPC[e.loot_package];
+
+            loot_place.innerHTML += `<label>${parse_name(e.loot_package)} (${((e.weight / ltd_total_weight) * 100).toFixed(2)}%)</label>`;
+            const item_container = document.createElement("div");
+            item_container.className = "item-container";
+            parse_lpc(current_lpc, item_container, e.weight / ltd_total_weight);
+            loot_place.appendChild(item_container);
+
+            if (extra_input.value == "local")
+                total_weight = 0;
         }
     });
     

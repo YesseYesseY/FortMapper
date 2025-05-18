@@ -125,7 +125,7 @@ namespace FortMapper
     // * Only OG loot is seriously tested
     // * This is SUPER messy and i dont feel like making it good right now
     // TODO: (not in order)
-    // * LootPackageCategoryMinArray
+    // * Rest of values to make ltd and lp function correctly (im looking at you 4x shotgun shell llama)
     // * Automatically get all the correct datatables from gamefeatures
     public class LootExport
     {
@@ -160,7 +160,17 @@ namespace FortMapper
                         SaveItemIcon(thingy);
         }
 
-        public static LootExport Yes(params (string ltd, string lp)[] paths)
+        public static LootExport Yes(string playlist_path)
+        {
+            List<(string ltd, string lp)> paths = new();
+
+            var playlist = GlobalProvider.LoadPackageObject<UObject>(playlist_path);
+            paths.Add((playlist.Get<FSoftObjectPath>("LootTierData").AssetPathName.PlainText, playlist.Get<FSoftObjectPath>("LootPackages").AssetPathName.PlainText));
+
+            return Yes(paths);
+        }
+
+        public static LootExport Yes(params IEnumerable<(string ltd, string lp)> paths)
         {
             var ret = new LootExport();
 
@@ -317,7 +327,6 @@ namespace FortMapper
                 }
             }
             
-
             return ret;
         }
     }
