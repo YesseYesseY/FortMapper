@@ -25,5 +25,12 @@ namespace FortMapper
 
             ExportTexture2D(texture_obj, out_path);
         }
+
+        public static string ValidFileName(string name)
+        {
+            foreach (var c in Path.GetInvalidFileNameChars())
+                name.Replace(c, '_');
+            return name;
+        }
     }
 }

@@ -113,10 +113,7 @@ namespace FortMapper
             get
             {
                 if (ItemIcon is null) return "";
-                var ret = $"{ItemIcon.Name}.png";
-                foreach (var c in Path.GetInvalidFileNameChars())
-                    ret.Replace(c, '_');
-                return Path.Join("Images", ret).Replace('\\', '/');
+                return Path.Join("Images", ExportUtils.ValidFileName($"{ItemIcon.Name}.png")).Replace('\\', '/');
             }
         }
     }

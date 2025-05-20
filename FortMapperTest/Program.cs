@@ -1,7 +1,9 @@
 ﻿using System.Text.RegularExpressions;
 using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
+using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.UObject;
 using FortMapper;
 using Newtonsoft.Json;
@@ -65,33 +67,33 @@ LootExport.Yes(
 #endif
 
 #if true
-
-WorldExport.JsonFormatting = Formatting.Indented;
-WorldExport.OutputActorClasses = true;
-WorldExport.ActorsToExport.AddRange(
-    "Tiered_Chest_6_Figment_C", "Tiered_Ammo_Figment_C",
-    "B_BGA_Athena_EnvCampFire_C",
-    "B_Athena_VendingMachine_Figment_C",
-    "BGA_Athena_SCMachine_Figment_C",
-    "Tiered_Chest_Athena_C",
-    "Tiered_Ammo_Athena_C"
-    );
-
-var yes = WorldExport.Yes(
-    //"FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",
-    //"FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_MapUI/Content/MiniMapAthena_S03.MiniMapAthena_S03"
-
-    "FortniteGame/Plugins/GameFeatures/BRMapCh6/Content/Maps/Hermes_Terrain.Hermes_Terrain",
-    "FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap.Apollo_Terrain_Minimap"
-    );
-
-if (yes is null || yes.MinimapTexture is null)
+foreach (var thing in new (string, string)[]
 {
-    Console.WriteLine(":(");
-    return;
+    ("FortniteGame/Plugins/GameFeatures/BRMapCh6/Content/Maps/Hermes_Terrain.Hermes_Terrain",
+     "FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap.Apollo_Terrain_Minimap"),
+    ("FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",
+     "FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_MapUI/Content/MiniMapAthena_S03.MiniMapAthena_S03")
+})
+{
+    var wexport = new WorldExport()
+    {
+        JsonFormatting = Formatting.Indented,
+        OutputActorClasses = true,
+        ActorsToExport =
+    {
+        "Tiered_Chest_6_Figment_C",
+        "Tiered_Ammo_Figment_C",
+        "B_BGA_Athena_EnvCampFire_C",
+        "B_Athena_VendingMachine_Figment_C",
+        "BGA_Athena_SCMachine_Figment_C",
+        "Tiered_Chest_Athena_C",
+        "Tiered_Ammo_Athena_C"
+    }
+    };
+    var world = GlobalProvider.LoadPackageObject<UWorld>(thing.Item1);
+    var minimap = GlobalProvider.LoadPackageObject<UTexture2D>(thing.Item2);
+    wexport.Parse(world, minimap);
+    wexport.Export();
 }
-yes.Export(true);
-
-ExportUtils.ExportTexture2D("FortniteGame/Plugins/GameFeatures/Creative/Devices/CRD_RebootVan/Content/SetupAssets/ID/T_Icon_PS_CP_Device_RebootVan.T_Icon_PS_CP_Device_RebootVan", "./World/BGA_Athena_SCMachine_Figment_C.png");
-
+ExportUtils.ExportTexture2D("FortniteGame/Plugins/GameFeatures/Creative/Devices/CRD_RebootVan/Content/SetupAssets/ID/T_Icon_PS_CP_Device_RebootVan.T_Icon_PS_CP_Device_RebootVan", "./World/Images/BGA_Athena_SCMachine_Figment_C.png");
 #endif

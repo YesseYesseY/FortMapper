@@ -49,21 +49,19 @@ namespace FortMapper
     public class WorldExport
     {
         [JsonIgnore]
-        public static string OutPath = "./World/";
+        public string OutPath = "./World/";
         [JsonIgnore]
-        public static List<string> ActorsToExport = new();
+        public List<string> ActorsToExport = new();
         [JsonIgnore]
-        public static Formatting JsonFormatting = Formatting.None;
+        public bool OutputActorClasses = false;
         [JsonIgnore]
-        public static bool OutputActorClasses = false;
-        [JsonIgnore]
-        public static bool OutputActorIcons = true;
+        public Formatting JsonFormatting = Formatting.None;
 
         [JsonIgnore]
         public static UObject? QuestIndicatorData = null;
 
         [JsonIgnore]
-        public CTexture? MinimapTexture;
+        public UTexture2D? MinimapTexture = null;
         [JsonIgnore]
         public Dictionary<string, int> ActorClasses = new();
 
@@ -74,8 +72,12 @@ namespace FortMapper
         public Dictionary<string, Vector3> POIs = new();
         [JsonProperty("camera")]
         public CameraProperties Camera = new();
+        [JsonProperty("minimap_path")]
+        public string MinimapPath = "";
+        [JsonProperty("map_name")]
+        public string MapName = "";
 
-        private void Parse(FPackageIndex? pi)
+        private void ParseActor(FPackageIndex? pi)
         {
             if (pi is null || pi.IsNull)
                 return;
@@ -114,11 +116,11 @@ namespace FortMapper
                             Actors[class_name].Add(smc!.GetRelativeLocation());
                         }
 
-                        if (OutputActorIcons && !exported_icon && ((UClass)actor.Class!).ClassDefaultObject.TryLoad(out var actorclassdefault) && 
+                        if (!exported_icon && ((UClass)actor.Class!).ClassDefaultObject.TryLoad(out var actorclassdefault) && 
                             actorclassdefault.TryGet("MarkerDisplay", out FStructFallback? md) &&
                             md!.TryGet("Icon", out FSoftObjectPath iconpath) && iconpath.TryLoad<UTexture2D>(out UTexture2D? icon_texture))
                         {
-                            File.WriteAllBytes(Path.Join(OutPath, $"{actor.Class!.Name}.png"), icon_texture!.Decode()!.Encode(ETextureFormat.Png, out string ext));
+                            File.WriteAllBytes(Path.Join(OutPath, "Images", $"{actor.Class!.Name}.png"), icon_texture!.Decode()!.Encode(ETextureFormat.Png, out string ext));
                             exported_icon = true;
                         }
                     }
@@ -127,67 +129,48 @@ namespace FortMapper
             }
         }
 
-        public void Export(bool export_minimap = false)
+        public void Export()
         {
-            Directory.CreateDirectory(OutPath);
-            File.WriteAllText(Path.Join(OutPath, "World.json"), JsonConvert.SerializeObject(this, JsonFormatting));
-
             if (OutputActorClasses)
             {
                 // https://stackoverflow.com/questions/289/how-do-you-sort-a-dictionary-by-value
                 ActorClasses = (from entry in ActorClasses orderby entry.Value descending select entry).ToDictionary();
-                File.WriteAllText(Path.Join(OutPath, "ActorClasses.json"), JsonConvert.SerializeObject(ActorClasses, JsonFormatting));
+                File.WriteAllText(Path.Join(OutPath, ExportUtils.ValidFileName($"{MapName}_ActorClasses.json")), JsonConvert.SerializeObject(ActorClasses, JsonFormatting));
             }
 
-            if (export_minimap)
+            if (MinimapTexture is not null)
             {
-                var icondecode = MinimapTexture?.ToSkBitmap ();
-                if (icondecode is not null)
-                {
-                    using (var image = SKImage.FromBitmap(icondecode))
-                    using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
-                    using (var stream = File.OpenWrite($"{OutPath}/map.png"))
-                    {
-                        data.SaveTo(stream);
-                    }
-                }
+                MinimapPath = Path.Join("Images", $"{MinimapTexture.Name}.png");
+                ExportUtils.ExportTexture2D(MinimapTexture, ExportUtils.ValidFileName(Path.Join(OutPath, MinimapPath)));
             }
+
+            File.WriteAllText(Path.Join(OutPath, ExportUtils.ValidFileName($"{MapName}.json")), JsonConvert.SerializeObject(this, JsonFormatting));
         }
 
-        public static WorldExport? Yes(string mappath, string minimappath)
+        public bool Parse(UWorld world, UTexture2D minimap)
         {
+            Directory.CreateDirectory(Path.Join(OutPath, "Images"));
+
             if (QuestIndicatorData is null)
-            {
                 QuestIndicatorData = GlobalProvider.LoadPackageObject("FortniteGame/Content/Quests/QuestIndicatorData.QuestIndicatorData");
-            }
 
-            var ret = new WorldExport();
             foreach (var class_name in ActorsToExport)
-                ret.Actors[class_name] = new();
+                Actors[class_name] = new();
 
-            ret.MinimapTexture = GlobalProvider.LoadPackageObject<UTexture2D>(minimappath).Decode();
+            MinimapTexture = minimap;
 
-            string mapname;
+            MapName = world.Name;
 
-            {
-                var world = GlobalProvider.LoadPackageObject<UWorld>(mappath);
-                mapname = world.Name;
-                var level = world.PersistentLevel.Load<ULevel>();
-                if (level is null)
-                {
-                    Console.WriteLine(":(");
-                    return null;
-                }
-
-                foreach (var actor in level.Actors)
-                    ret.Parse(actor);
-            }
-
+            if (world.PersistentLevel.TryLoad(out ULevel? level))
+                foreach (var actor in level!.Actors)
+                    ParseActor(actor);
+            
+            // Can maybe get this from poi volumes?
             if (QuestIndicatorData.TryGet("ChallengeMapsPoiData", out UScriptMap? cmpd))
             {
                 foreach (var mapthing in cmpd!.Properties)
                 {
-                    if (mapthing.Key.GetValue<FName>().PlainText == mapname)
+                    if (mapthing.Key.GetValue<FName>().PlainText == MapName)
                     {
                         var structthing = mapthing.Value!.GetValue<FStructFallback>();
                         if (structthing!.TryGet("ChallengeMapsPoiData", out FStructFallback[]? cmpd_real))
@@ -195,7 +178,7 @@ namespace FortMapper
                             foreach (var poi in cmpd_real!)
                             {
                                 // TODO: Fix duplicate names
-                                ret.POIs[poi.Get<FText>("Text").Text] = poi.Get<FVector>("WorldLocation");
+                                POIs[poi.Get<FText>("Text").Text] = poi.Get<FVector>("WorldLocation");
                             }
                         }
                         break;
@@ -208,15 +191,15 @@ namespace FortMapper
             // SpatiallyLoadedCells -> (foreach) -> LevelStreaming -> WorldAsset -> PersistentLevel
             foreach (var file in GlobalProvider.Files)
             {
-                if (file.Key.EndsWith(".umap") && file.Key.Contains($"{mapname}/_Generated_/"))
+                if (file.Key.EndsWith(".umap") && file.Key.Contains($"{MapName}/_Generated_/"))
                 {
-                    var level = GlobalProvider.LoadPackageObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
+                    level = GlobalProvider.LoadPackageObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
                     foreach (var actor in level.Actors)
-                        ret.Parse(actor);
+                        ParseActor(actor);
                 }
             }
 
-            return ret;
+            return true;
         }
     }
 }

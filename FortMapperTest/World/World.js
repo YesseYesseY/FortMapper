@@ -45,7 +45,6 @@ jsoninput.addEventListener("change", (e) => {
 
     reader.addEventListener("load", (e) => {
         world = JSON.parse(e.target.result);
-        jsoninput.style.display = "None";
         actorButtons.style.display = "block";
         maindraw();
     });
@@ -105,52 +104,59 @@ function toggleActor(actor) {
     drawMap();
 }
 
-const mapimage = new Image(2048, 2048);
-mapimage.src = "./map.png";
-mapimage.addEventListener("load", () => {
-    drawMap();
-    canvas.style.display = "Block";
-    canvas.addEventListener("wheel", (e) => {
-        const oldZoom = imgZoom;
-        const canvasCenterX = canvas.width / 2;
-        const canvasCenterY = canvas.height / 2;
+var mapimage;
 
-        e.deltaY < 0 ? imgZoom *= zoomMult : imgZoom /= zoomMult;
+function setupMapImage(map_path) {
+    mapimage = new Image(2048, 2048);
+    mapimage.src = map_path;
+    mapimage.addEventListener("load", () => {
+        drawMap();
+        canvas.style.display = "Block";
+        canvas.addEventListener("wheel", (e) => {
+            const oldZoom = imgZoom;
+            const canvasCenterX = canvas.width / 2;
+            const canvasCenterY = canvas.height / 2;
 
-        img_pos.X = canvasCenterX - ((canvasCenterX - img_pos.X) / oldZoom) * imgZoom;
-        img_pos.Y = canvasCenterY - ((canvasCenterY - img_pos.Y) / oldZoom) * imgZoom;
-        drawMap();
+            e.deltaY < 0 ? imgZoom *= zoomMult : imgZoom /= zoomMult;
+
+            img_pos.X = canvasCenterX - ((canvasCenterX - img_pos.X) / oldZoom) * imgZoom;
+            img_pos.Y = canvasCenterY - ((canvasCenterY - img_pos.Y) / oldZoom) * imgZoom;
+            drawMap();
+        });
+        canvas.addEventListener("mousedown", (e) => {
+            canvas.style.cursor = "all-scroll";
+            if (e.button == 0)
+                dragging = "map";
+            else if (e.button == 1)
+                dragging = "zone"
+        });
+        canvas.addEventListener("mouseup", (e) => {
+            canvas.style.cursor = "default";
+            dragging = "";
+        });
+        canvas.addEventListener("mousemove", (e) => {
+            if (dragging == "map") {
+                img_pos.X += e.movementX;
+                img_pos.Y += e.movementY;
+            } else if (dragging == "zone") {
+                const new_zone_pos = img_to_world({
+                    X: e.offsetX,
+                    Y: e.offsetY
+                });
+                zone_pos = new_zone_pos;
+            }
+            drawMap();
+        });
     });
-    canvas.addEventListener("mousedown", (e) => {
-        canvas.style.cursor = "all-scroll";
-        if (e.button == 0)
-            dragging = "map";
-        else if (e.button == 1)
-            dragging = "zone"
-    });
-    canvas.addEventListener("mouseup", (e) => {
-        canvas.style.cursor = "default";
-        dragging = "";
-    });
-    canvas.addEventListener("mousemove", (e) => {
-        if (dragging == "map") {
-            img_pos.X += e.movementX;
-            img_pos.Y += e.movementY;
-        } else if (dragging == "zone") {
-            const new_zone_pos = img_to_world({
-                X: e.offsetX,
-                Y: e.offsetY
-            });
-            zone_pos = new_zone_pos;
-        }
-        drawMap();
-    });
-});
+}
 
 function maindraw() {
+    setupMapImage(world.minimap_path);
     actornames = Object.keys(world.actors);
     zone_pos.X = world.camera.pos.X;
     zone_pos.Y = world.camera.pos.Y;
+    actorButtons.innerHTML = "";
+    drawPois = false;
     for (let i = 0; i < actornames.length; i++) {
         if (Object.values(world.actors[actornames[i]]).length == 0) continue;
 
@@ -159,7 +165,7 @@ function maindraw() {
 
         actorimages[actornames[i]] = (() => {
             const actorimg = new Image();
-            actorimg.src = `./${actornames[i]}.png`;
+            actorimg.src = `./Images/${actornames[i]}.png`;
             actorimg.addEventListener("load", () => drawMap());
             return actorimg;
         })();
