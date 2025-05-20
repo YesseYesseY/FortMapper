@@ -127,9 +127,13 @@ namespace FortMapper
     public class LootExport
     {
         // Options
+        [JsonIgnore]
         public static string OutPath = "./Loot/";
+        [JsonIgnore]
         public static bool OutputItemIcons = true;
+        [JsonIgnore]
         public static Formatting JsonFormatting = Formatting.None;
+        [JsonIgnore]
         public static string Hotfixes = "";
 
         public Dictionary<string, List<LootTierData>> LTD = new();
@@ -148,9 +152,7 @@ namespace FortMapper
         public void Export(bool export_icons = false)
         {
             Directory.CreateDirectory(Path.Join(OutPath, "Images"));
-            File.WriteAllText(Path.Join(OutPath, "LTD.json"), JsonConvert.SerializeObject(LTD, JsonFormatting));
-            File.WriteAllText(Path.Join(OutPath, "LP.json"), JsonConvert.SerializeObject(LP, JsonFormatting));
-            File.WriteAllText(Path.Join(OutPath, "LPC.json"), JsonConvert.SerializeObject(LPC, JsonFormatting));
+            File.WriteAllText(Path.Join(OutPath, "Loot.json"), JsonConvert.SerializeObject(this, JsonFormatting));
             if (export_icons)
                 foreach (var thing in LPC.Values)
                     foreach (var thingy in thing)

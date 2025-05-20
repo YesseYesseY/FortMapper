@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 GlobalProvider.Init();
 
-#if false
+#if true
 
 LootExport.Hotfixes = @"
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaFloorLoot_07;Weight;0.000000
@@ -47,11 +47,11 @@ LootExport.Hotfixes = @"
 ";
 
 LootExport.Yes(
-#if false // OG ZB
+#if true // OG ZB
     ("FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LTD_Figment.NoBuild_Composite_LTD_Figment",
      "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LP_Figment.NoBuild_Composite_LP_Figment")
 #endif
-    "FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
+    //"FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
 //"FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo"
 
 #if false // BR
@@ -66,7 +66,7 @@ LootExport.Yes(
 ).Export(true);
 #endif
 
-#if true
+#if false
 foreach (var thing in new (string, string)[]
 {
     ("FortniteGame/Plugins/GameFeatures/BRMapCh6/Content/Maps/Hermes_Terrain.Hermes_Terrain",

@@ -1,6 +1,5 @@
 const data_input = document.getElementById("data-input");
 const ltd_input = document.getElementById("ltd-input");
-const extra_input = document.getElementById("extra-input");
 const loot_place = document.getElementById("loot-place");
 
 var data = {};
@@ -37,7 +36,6 @@ const translation_table = {
     "WorldList.AthenaLoot.Ammo": "Ammo",
     "WorldList.AthenaLoot.Resources": "Resources",
     "WorldList.AthenaHighConsumables": "Consumables",
-    "WorldList.AthenaLoot.Resources": "Resources",
     "WorldList.AthenaWadChests": "Gold",
     "WorldList.AthenaTraps": "Traps",
     "WorldList.AthenaSupplyDropConsumables": "Consumables",
@@ -61,30 +59,25 @@ data_input.addEventListener("change", (e) => {
         const reader = new FileReader();
 
         reader.addEventListener("load", (e) => {
-            const nametoadd = f.name.replace(".json", "");
-            data[nametoadd] = JSON.parse(e.target.result);
+            data = JSON.parse(e.target.result);
 
             // TODO: IDK WHERE TF WorldPKG.AthenaLoot.Ammo IS OR IF IT EXISTS AT ALL SO THIS WILL HAVE TO DO
-            if (nametoadd == "LP") {
-                data[nametoadd]["WorldPKG.AthenaLoot.Ammo"] = [
-                    {
-                        "weight": 1,
-                        "loot_package_call": "WorldList.AthenaLoot.Ammo"
-                    }
-                ];
-                data[nametoadd]["WorldPKG.AthenaLoot.Resources"] = [
-                    {
-                        "weight": 1,
-                        "loot_package_call": "WorldList.AthenaLoot.Resources"
-                    }
-                ];
-            }
+            data["LP"]["WorldPKG.AthenaLoot.Ammo"] = [
+                {
+                    "weight": 1,
+                    "loot_package_call": "WorldList.AthenaLoot.Ammo"
+                }
+            ];
+            data["LP"]["WorldPKG.AthenaLoot.Resources"] = [
+                {
+                    "weight": 1,
+                    "loot_package_call": "WorldList.AthenaLoot.Resources"
+                }
+            ];
         });
-
         reader.readAsText(f);
 
         ltd_input.style.display = "inline";
-        extra_input.style.display = "inline";
         data_input.style.display = "none";
     });
 });
@@ -94,7 +87,25 @@ function parse_name(name) {
 }
 
 function parse_rarity(rarity) {
-    return rarity in rarity_colors ? `radial-gradient(${rarity_colors[rarity][0]}, ${rarity_colors[rarity][3]})` : "#888888";
+    return rarity in rarity_colors ? `radial-gradient(${rarity_colors[rarity][0]}, ${rarity_colors[rarity][3]})` : "#FF00FF";
+}
+
+function to_percent(val) {
+    return (val * 100).toFixed(2) + "%"
+}
+
+function create_item_card2(img_path, top_text, bottom_text, rarity) {
+    const item_card = Object.assign(document.createElement("div"), { className: "item-card" });
+    const item_img = Object.assign(document.createElement("img"), { draggable: false, });
+    if (img_path !== "")
+        item_img.src = img_path;
+    item_img.style.background = parse_rarity(rarity);
+    item_card.append(
+        Object.assign(document.createElement("label"), { innerText: top_text }),
+        item_img,
+        Object.assign(document.createElement("label"), { innerText: bottom_text })
+    );
+    return item_card;
 }
 
 function create_item_card(e, ltd_prob, weight2) {
@@ -113,97 +124,45 @@ function create_item_card(e, ltd_prob, weight2) {
     return item_card;
 }
 
-function parse_lpc(lpc, item_container, ltd_prob) {
-    var w2 = 0;
-    lpc.forEach(e => w2 += e.weight);
-    lpc.forEach(e => item_container.appendChild(create_item_card(e, ltd_prob, w2)));
-}
-
-ltd_input.addEventListener("change", (e) => {
+ltd_input.addEventListener("change", (change_event) => {
     const LTD = data["LTD"];
     const LP = data["LP"];
     const LPC = data["LPC"];
 
     loot_place.innerHTML = "";
 
-    if (e.target.value == "") return;
-
-    const ltdinputval = e.target.value;
+    if (change_event.target.value == "") return;
 
     var ltd_total_weight = 0;
-    LTD[e.target.value].forEach((e) => ltd_total_weight += e.weight);
+    LTD[change_event.target.value].forEach(e => ltd_total_weight += e.weight);
 
-    if (e.target.value == "Loot_AthenaTreasure" || e.target.value == "Loot_AthenaSupplyDrop")
-    {
-        const current_lp = LP[LTD[e.target.value][0].loot_package];
-        for (let i = 2; i < current_lp.length; i++) {
-            const current_lpc = LPC[current_lp[i].loot_package_call];
-            loot_place.innerHTML += `<label>${parse_name(current_lp[i].loot_package_call)}</label>`;
-            const item_container = document.createElement("div");
-            item_container.className = "item-container";
-            loot_place.appendChild(item_container);
-
-            var total_weight = 0;
-            current_lpc.forEach(thing => total_weight += thing.weight);
-            parse_lpc(current_lpc, item_container, 1);
-        }
+    const lpcs = {};
+    function addtolpcs(weight, name) {
+        if (name in lpcs)
+            lpcs[name] += weight;
+        else
+            lpcs[name] = weight;
     }
-
-    var total_weight = 0;
-    var combine_container;
-
-    if (extra_input.value != "local") {
-        LTD[e.target.value].forEach((e2) => {
-            if (e2.loot_package.startsWith("WorldList")) {
-                LPC[e2.loot_package].forEach(e3 => total_weight += e3.weight);
-            }
-            else {
-                LPC[LP[e2.loot_package][0].loot_package_call].forEach(e3 => total_weight += e3.weight);
-            }
-        });
-    }
-
-    LTD[e.target.value].forEach((e) => {
-        console.log(e);
-        const current_lp = LP[e.loot_package];
-        const lp_is_lpc = e.loot_package.startsWith("WorldList");
-        var current_lpc = lp_is_lpc ? LPC[e.loot_package] : LPC[current_lp[0].loot_package_call];
-
-        if (!e.loot_package.startsWith("WorldList")) {
-            for (let i = 0; i < current_lp.length; i++) {
-                const e2 = current_lp[i];
-                if (extra_input.value == "local")
-                    current_lpc.forEach(thing => total_weight += thing.weight);
-
-                current_lpc = LPC[e2.loot_package_call];
-
-                loot_place.innerHTML += `<label>${parse_name(e2.loot_package_call)} (${((e.weight / ltd_total_weight) * 100).toFixed(2)}%)</label>`;
-                const item_container = document.createElement("div");
-                item_container.className = "item-container";
-                parse_lpc(current_lpc, item_container, e.weight / ltd_total_weight);
-                loot_place.appendChild(item_container);
-
-                if (extra_input.value == "local")
-                    total_weight = 0;
-
-                if (LTD[ltdinputval].length != 1) break;
-            }
+    LTD[change_event.target.value].forEach(e => {
+        if (e.loot_package.startsWith("WorldList")) {
+            addtolpcs(e.weight, e.loot_package);
         } else {
-            if (extra_input.value == "local")
-                current_lpc.forEach(thing => total_weight += thing.weight);
-
-            current_lpc = LPC[e.loot_package];
-
-            loot_place.innerHTML += `<label>${parse_name(e.loot_package)} (${((e.weight / ltd_total_weight) * 100).toFixed(2)}%)</label>`;
-            const item_container = document.createElement("div");
-            item_container.className = "item-container";
-            parse_lpc(current_lpc, item_container, e.weight / ltd_total_weight);
-            loot_place.appendChild(item_container);
-
-            if (extra_input.value == "local")
-                total_weight = 0;
+            LP[e.loot_package].forEach(e2 => addtolpcs(e.weight, e2.loot_package_call));
         }
-    });
-    
-    
+    })
+
+    Object.entries(lpcs).forEach(e => {
+        loot_place.innerHTML += `<label>${parse_name(e[0])} (${to_percent(e[1] / ltd_total_weight)})</label>`;
+        const item_container = document.createElement("div");
+        item_container.className = "item-container";
+        var lpc_total_weight = 0;
+        LPC[e[0]].forEach(thing => lpc_total_weight += thing.weight);
+        LPC[e[0]].forEach(thing => item_container.appendChild(create_item_card2(
+            thing.item_count > 0 ? thing.item_icon : "",
+            to_percent((thing.weight / lpc_total_weight) * (e[1] / ltd_total_weight)),
+            thing.item_count > 0 ? ((thing.item_count != 1 ? `${thing.item_count}x ` : "") + thing.item_name) : "Empty",
+            thing.item_rarity
+        )));
+        loot_place.appendChild(item_container);
+    })
 });
