@@ -36,6 +36,7 @@ const translation_table = {
     "WorldList.AthenaLoot.Ammo": "Ammo",
     "WorldList.AthenaLoot.Resources": "Resources",
     "WorldList.AthenaHighConsumables": "Consumables",
+    "WorldList.AthenaConsumables": "Consumables",
     "WorldList.AthenaWadChests": "Gold",
     "WorldList.AthenaTraps": "Traps",
     "WorldList.AthenaSupplyDropConsumables": "Consumables",
@@ -94,12 +95,23 @@ function to_percent(val) {
     return (val * 100).toFixed(2) + "%"
 }
 
-function create_item_card2(img_path, top_text, bottom_text, rarity) {
+function get_total_weight(thing) {
+    var ret = 0;
+    thing.forEach(e => ret += e.weight);
+    return ret;
+}
+
+function create_item_container(name, chance) {
+    loot_place.innerHTML += `<label>${parse_name(name)} (${to_percent(chance)})</label>`;
+    return Object.assign(document.createElement("div"), { className: "item-container" });
+}
+
+function create_item_card(img_path, top_text, bottom_text, background) {
     const item_card = Object.assign(document.createElement("div"), { className: "item-card" });
     const item_img = Object.assign(document.createElement("img"), { draggable: false, });
     if (img_path !== "")
         item_img.src = img_path;
-    item_img.style.background = parse_rarity(rarity);
+    item_img.style.background = background;
     item_card.append(
         Object.assign(document.createElement("label"), { innerText: top_text }),
         item_img,
@@ -108,33 +120,17 @@ function create_item_card2(img_path, top_text, bottom_text, rarity) {
     return item_card;
 }
 
-function create_item_card(e, ltd_prob, weight2) {
-    const is_empty = e.item_count == 0;
-    const item_card = Object.assign(document.createElement("div"), { className: "item-card" });
-    const item_card_img = Object.assign(document.createElement("img"), { draggable: false, });
-    if (!is_empty)
-        item_card_img.src = e.item_icon;
-    item_card_img.style.background = parse_rarity(e.item_rarity);
-    const item_name_label = Object.assign(document.createElement("label"), { innerText: is_empty ? "Empty" : (e.item_count != 1 ? `${e.item_count}x ` : "") + e.item_name });
-    item_card.append(
-        Object.assign(document.createElement("label"), { innerText: ((((e.weight / weight2) * (ltd_prob)) * 100).toFixed(2)) + "%" }),
-        item_card_img,
-        item_name_label
+function item_to_card(item, ltd_chance, lpc_chance) {
+    return create_item_card(
+        item.item_count > 0 ? item.item_icon : "",
+        to_percent(lpc_chance * ltd_chance),
+        item.item_count > 0 ? ((item.item_count != 1 ? `${item.item_count}x ` : "") + item.item_name) : "Empty",
+        parse_rarity(item.item_rarity)
     );
-    return item_card;
 }
 
-ltd_input.addEventListener("change", (change_event) => {
-    const LTD = data["LTD"];
-    const LP = data["LP"];
-    const LPC = data["LPC"];
-
-    loot_place.innerHTML = "";
-
-    if (change_event.target.value == "") return;
-
-    var ltd_total_weight = 0;
-    LTD[change_event.target.value].forEach(e => ltd_total_weight += e.weight);
+function parse_default(ltd_name, ignore_ammo = false, worldpkg_search_limit = 999) {
+    const ltd_total_weight = get_total_weight(data["LTD"][ltd_name]);
 
     const lpcs = {};
     function addtolpcs(weight, name) {
@@ -143,26 +139,72 @@ ltd_input.addEventListener("change", (change_event) => {
         else
             lpcs[name] = weight;
     }
-    LTD[change_event.target.value].forEach(e => {
+
+    data["LTD"][ltd_name].forEach(e => {
         if (e.loot_package.startsWith("WorldList")) {
             addtolpcs(e.weight, e.loot_package);
         } else {
-            LP[e.loot_package].forEach(e2 => addtolpcs(e.weight, e2.loot_package_call));
+            const thingy = data["LP"][e.loot_package];
+            for (let i = 0; i < thingy.length; i++) {
+                if (i == worldpkg_search_limit) break;
+                const e2 = thingy[i];
+                addtolpcs(e.weight, e2.loot_package_call)
+            }
         }
     })
 
-    Object.entries(lpcs).forEach(e => {
-        loot_place.innerHTML += `<label>${parse_name(e[0])} (${to_percent(e[1] / ltd_total_weight)})</label>`;
-        const item_container = document.createElement("div");
-        item_container.className = "item-container";
-        var lpc_total_weight = 0;
-        LPC[e[0]].forEach(thing => lpc_total_weight += thing.weight);
-        LPC[e[0]].forEach(thing => item_container.appendChild(create_item_card2(
-            thing.item_count > 0 ? thing.item_icon : "",
-            to_percent((thing.weight / lpc_total_weight) * (e[1] / ltd_total_weight)),
-            thing.item_count > 0 ? ((thing.item_count != 1 ? `${thing.item_count}x ` : "") + thing.item_name) : "Empty",
-            thing.item_rarity
-        )));
+    for (const [lpc_name, lpc_weight] of Object.entries(lpcs)) {
+        if(ignore_ammo && lpc_name.includes(".Ammo.")) continue;
+
+        const item_container = create_item_container(lpc_name, lpc_weight / ltd_total_weight);
+        const lpc_total_weight = get_total_weight(data["LPC"][lpc_name]);
+
+        data["LPC"][lpc_name].forEach(thing => item_container.appendChild(item_to_card(thing, lpc_weight / ltd_total_weight, thing.weight / lpc_total_weight)));
+        loot_place.appendChild(item_container);
+    }
+}
+
+function parse_treasure(ltd_name) {
+    const current_ltd = data["LTD"][ltd_name];
+    const ltd_total_weight = get_total_weight(current_ltd);
+
+    {
+        const thing = data["LP"][current_ltd[0].loot_package];
+        for (let i = 2; i < thing.length; i++) {
+            const item_container = create_item_container(thing[i].loot_package_call, 1);
+            const lpc_total_weight = get_total_weight(data["LPC"][thing[i].loot_package_call]);
+            data["LPC"][thing[i].loot_package_call].forEach(e => item_container.appendChild(item_to_card(e, 1, e.weight / lpc_total_weight)));
+            loot_place.appendChild(item_container);
+        }
+    }
+
+    current_ltd.forEach(e3 => {
+        const thing = data["LP"][e3.loot_package];
+        const item_container = create_item_container(thing[0].loot_package_call, e3.weight / ltd_total_weight);
+        const lpc_total_weight = get_total_weight(data["LPC"][thing[0].loot_package_call]);
+        data["LPC"][thing[0].loot_package_call].forEach(e => item_container.appendChild(item_to_card(e, e3.weight / ltd_total_weight, e.weight / lpc_total_weight)));
         loot_place.appendChild(item_container);
     })
+}
+
+ltd_input.addEventListener("change", (change_event) => {
+    loot_place.innerHTML = "";
+    if (change_event.target.value == "") return;
+
+    switch (change_event.target.value) {
+        case "Loot_AthenaTreasure":
+            parse_treasure(change_event.target.value);
+            break;
+        case "Loot_AthenaSupplyDrop":
+            parse_default(change_event.target.value, true);
+            break;
+        case "Loot_AthenaFloorLoot":
+        case "Loot_AthenaFloorLoot_Warmup":
+            parse_default(change_event.target.value, false, 1);
+            break;
+        default:
+            console.log(change_event.target.value);
+            parse_default(change_event.target.value);
+            break;
+    }
 });
