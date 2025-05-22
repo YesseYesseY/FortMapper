@@ -12,6 +12,30 @@ window.addEventListener("resize", (e) => {
     canvas.height = window.innerHeight;
     drawMap();
 });
+canvas.addEventListener("mousedown", (e) => {
+    canvas.style.cursor = "all-scroll";
+    if (e.button == 0)
+        dragging = "map";
+    else if (e.button == 1)
+        dragging = "zone"
+});
+canvas.addEventListener("mouseup", (e) => {
+    canvas.style.cursor = "default";
+    dragging = "";
+});
+canvas.addEventListener("mousemove", (e) => {
+    if (dragging == "map") {
+        img_pos.X += e.movementX;
+        img_pos.Y += e.movementY;
+    } else if (dragging == "zone") {
+        const new_zone_pos = img_to_world({
+            X: e.offsetX,
+            Y: e.offsetY
+        });
+        zone_pos = new_zone_pos;
+    }
+    drawMap();
+});
 
 var world = {};
 
@@ -123,30 +147,7 @@ function setupMapImage(map_path) {
             img_pos.Y = canvasCenterY - ((canvasCenterY - img_pos.Y) / oldZoom) * imgZoom;
             drawMap();
         });
-        canvas.addEventListener("mousedown", (e) => {
-            canvas.style.cursor = "all-scroll";
-            if (e.button == 0)
-                dragging = "map";
-            else if (e.button == 1)
-                dragging = "zone"
-        });
-        canvas.addEventListener("mouseup", (e) => {
-            canvas.style.cursor = "default";
-            dragging = "";
-        });
-        canvas.addEventListener("mousemove", (e) => {
-            if (dragging == "map") {
-                img_pos.X += e.movementX;
-                img_pos.Y += e.movementY;
-            } else if (dragging == "zone") {
-                const new_zone_pos = img_to_world({
-                    X: e.offsetX,
-                    Y: e.offsetY
-                });
-                zone_pos = new_zone_pos;
-            }
-            drawMap();
-        });
+
     });
 }
 

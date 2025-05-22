@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 GlobalProvider.Init();
 
-#if true
+#if false
 
 LootExport.Hotfixes = @"
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaFloorLoot_07;Weight;0.000000
@@ -58,21 +58,30 @@ LootExport.Yes(
     ("FortniteGame/Content/Athena/Playlists/AthenaCompositeLTD.AthenaCompositeLTD",
      "FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/AthenaCompositeLP.AthenaCompositeLP"),
     ("FortniteGame/Plugins/GameFeatures/LootCurrentSeason/Content/DataTables/LootCurrentSeasonLootTierData_Client.LootCurrentSeasonLootTierData_Client",
-     "FortniteGame/Plugins/GameFeatures/LootCurrentSeason/Content/DataTables/LootCurrentSeasonLootPackages_Client.LootCurrentSeasonLootPackages_Client"),
-    ("FortniteGame/Plugins/GameFeatures/JethroLoot/Content/DataTables/JethroLootTierData.JethroLootTierData",
-     "FortniteGame/Plugins/GameFeatures/JethroLoot/Content/DataTables/JethroLootPackages.JethroLootPackages")
+     "FortniteGame/Plugins/GameFeatures/LootCurrentSeaszhroLootPackages.JethroLootPackages")
 #endif
 
 ).Export(true);
 #endif
 
-#if false
-foreach (var thing in new (string, string)[]
+#if true
+foreach (var thing in new (string, string, string)[]
 {
     ("FortniteGame/Plugins/GameFeatures/BRMapCh6/Content/Maps/Hermes_Terrain.Hermes_Terrain",
-     "FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap.Apollo_Terrain_Minimap"),
+     "FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap.Apollo_Terrain_Minimap",
+     "Hermes"),
     ("FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_Map/Content/Athena_Terrain_S03.Athena_Terrain_S03",
-     "FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_MapUI/Content/MiniMapAthena_S03.MiniMapAthena_S03")
+     "FortniteGame/Plugins/GameFeatures/Figment/Figment_S03_MapUI/Content/MiniMapAthena_S03.MiniMapAthena_S03",
+     "Figment"),
+    ("FortniteGame/Plugins/GameFeatures/f4032749-42c4-7fe9-7fa2-c78076f34f54/Content/DashBerry.DashBerry",
+     "FortniteGame/Plugins/GameFeatures/BlastBerryMapUI/Content/Minimap/Discovered_DashBerry.Discovered_DashBerry",
+     "Slurp Rush"),
+    //("FortniteGame/Plugins/GameFeatures/fd242d06-46d5-d389-1a48-2fb3bb65c2a1/Content/Maps/BlastBerry_Terrain.BlastBerry_Terrain",
+    // "FortniteGame/Plugins/GameFeatures/BlastBerryMapUI/Content/Minimap/Discovered_PunchBerry.Discovered_PunchBerry",
+    // "Oasis"),
+    //("FortniteGame/Plugins/GameFeatures/BlastBerryMap/Content/Maps/BlastBerry_Terrain.BlastBerry_Terrain",
+    // "FortniteGame/Plugins/GameFeatures/BlastBerryMapUI/Content/Minimap/Capture_Iteration_Discovered_BlastBerry.Capture_Iteration_Discovered_BlastBerry",
+    // "Venture")
 })
 {
     var wexport = new WorldExport()
@@ -87,13 +96,14 @@ foreach (var thing in new (string, string)[]
         "B_Athena_VendingMachine_Figment_C",
         "BGA_Athena_SCMachine_Figment_C",
         "Tiered_Chest_Athena_C",
-        "Tiered_Ammo_Athena_C"
+        "Tiered_Ammo_Athena_C",
+        "Tiered_Chest_Sunflower_C"
     }
     };
     var world = GlobalProvider.LoadPackageObject<UWorld>(thing.Item1);
     var minimap = GlobalProvider.LoadPackageObject<UTexture2D>(thing.Item2);
     wexport.Parse(world, minimap);
-    wexport.Export();
+    wexport.Export(thing.Item3);
 }
 ExportUtils.ExportTexture2D("FortniteGame/Plugins/GameFeatures/Creative/Devices/CRD_RebootVan/Content/SetupAssets/ID/T_Icon_PS_CP_Device_RebootVan.T_Icon_PS_CP_Device_RebootVan", "./World/Images/BGA_Athena_SCMachine_Figment_C.png");
 #endif

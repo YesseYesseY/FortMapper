@@ -21,6 +21,7 @@ using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using Newtonsoft.Json;
 using SkiaSharp;
 using CUE4Parse.UE4.Objects.Core.i18N;
+using System;
 
 namespace FortMapper
 {
@@ -77,6 +78,18 @@ namespace FortMapper
         [JsonProperty("map_name")]
         public string MapName = "";
 
+        private bool TryGetIcon(UObject obj, string name)
+        {
+            if (obj.TryGet("MarkerDisplay", out FStructFallback? md) &&
+                md!.TryGet("Icon", out FSoftObjectPath iconpath) && iconpath.TryLoad<UTexture2D>(out UTexture2D? icon_texture))
+            {
+                File.WriteAllBytes(Path.Join(OutPath, "Images", $"{name}.png"), icon_texture!.Decode()!.Encode(ETextureFormat.Png, out string ext));
+                return true;
+            }
+
+            return false;
+        }
+
         private void ParseActor(FPackageIndex? pi)
         {
             if (pi is null || pi.IsNull)
@@ -116,12 +129,18 @@ namespace FortMapper
                             Actors[class_name].Add(smc!.GetRelativeLocation());
                         }
 
-                        if (!exported_icon && ((UClass)actor.Class!).ClassDefaultObject.TryLoad(out var actorclassdefault) && 
-                            actorclassdefault.TryGet("MarkerDisplay", out FStructFallback? md) &&
-                            md!.TryGet("Icon", out FSoftObjectPath iconpath) && iconpath.TryLoad<UTexture2D>(out UTexture2D? icon_texture))
+                        if (exported_icon) continue;
+
+                        UObject? current_cdo = ((UClass)actor.Class!).ClassDefaultObject.Load();
+                        while (current_cdo is not null)
                         {
-                            File.WriteAllBytes(Path.Join(OutPath, "Images", $"{actor.Class!.Name}.png"), icon_texture!.Decode()!.Encode(ETextureFormat.Png, out string ext));
-                            exported_icon = true;
+                            if (TryGetIcon(current_cdo, actor.Class!.Name))
+                            {
+                                exported_icon = true;
+                                break;
+                            }
+
+                            current_cdo = current_cdo.Template?.Load();
                         }
                     }
                 }
@@ -129,13 +148,13 @@ namespace FortMapper
             }
         }
 
-        public void Export()
+        public void Export(string? custom_name = null)
         {
             if (OutputActorClasses)
             {
                 // https://stackoverflow.com/questions/289/how-do-you-sort-a-dictionary-by-value
                 ActorClasses = (from entry in ActorClasses orderby entry.Value descending select entry).ToDictionary();
-                File.WriteAllText(Path.Join(OutPath, ExportUtils.ValidFileName($"{MapName}_ActorClasses.json")), JsonConvert.SerializeObject(ActorClasses, JsonFormatting));
+                File.WriteAllText(Path.Join(OutPath, ExportUtils.ValidFileName($"{(custom_name is not null ? custom_name : "MapName")}_ActorClasses.json")), JsonConvert.SerializeObject(ActorClasses, JsonFormatting));
             }
 
             if (MinimapTexture is not null)
@@ -144,7 +163,7 @@ namespace FortMapper
                 ExportUtils.ExportTexture2D(MinimapTexture, ExportUtils.ValidFileName(Path.Join(OutPath, MinimapPath)));
             }
 
-            File.WriteAllText(Path.Join(OutPath, ExportUtils.ValidFileName($"{MapName}.json")), JsonConvert.SerializeObject(this, JsonFormatting));
+            File.WriteAllText(Path.Join(OutPath, ExportUtils.ValidFileName($"{(custom_name is not null ? custom_name : "MapName")}.json")), JsonConvert.SerializeObject(this, JsonFormatting));
         }
 
         public bool Parse(UWorld world, UTexture2D minimap)

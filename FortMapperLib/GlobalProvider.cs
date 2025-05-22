@@ -27,6 +27,13 @@ namespace FortMapper
 
             _provider.MappingsContainer = new FileUsmapTypeMappingsProvider("./mappings.usmap");
             _provider.Initialize();
+            var game_custom_path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FortniteGame", "Saved", "PersistentDownloadDir", "GameCustom", "InstalledBundles");
+            var dash_berry_path = Path.Join(game_custom_path, "d27febeb-d6db-4cdc-8b53-d9958a212787");
+            if (Directory.Exists(dash_berry_path))
+                _provider.RegisterVfs(Path.Join(dash_berry_path, "plugin.utoc"));
+            dash_berry_path = Path.Join(game_custom_path, "6d357f46-2a0f-433d-893b-228a8d7b1362");
+            if (Directory.Exists(dash_berry_path))
+                _provider.RegisterVfs(Path.Join(dash_berry_path, "plugin.utoc"));
             _provider.SubmitKey(new FGuid(), new FAesKey("0x163920F671322A7D00302EF00A4E046AF2C0B4B204BCC035A8CA8869472B2448"));
             _provider.PostMount();
             _provider.LoadVirtualPaths();
