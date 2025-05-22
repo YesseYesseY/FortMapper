@@ -76,12 +76,12 @@ foreach (var thing in new (string, string, string)[]
     ("FortniteGame/Plugins/GameFeatures/f4032749-42c4-7fe9-7fa2-c78076f34f54/Content/DashBerry.DashBerry",
      "FortniteGame/Plugins/GameFeatures/BlastBerryMapUI/Content/Minimap/Discovered_DashBerry.Discovered_DashBerry",
      "Slurp Rush"),
-    //("FortniteGame/Plugins/GameFeatures/fd242d06-46d5-d389-1a48-2fb3bb65c2a1/Content/Maps/BlastBerry_Terrain.BlastBerry_Terrain",
-    // "FortniteGame/Plugins/GameFeatures/BlastBerryMapUI/Content/Minimap/Discovered_PunchBerry.Discovered_PunchBerry",
-    // "Oasis"),
-    //("FortniteGame/Plugins/GameFeatures/BlastBerryMap/Content/Maps/BlastBerry_Terrain.BlastBerry_Terrain",
-    // "FortniteGame/Plugins/GameFeatures/BlastBerryMapUI/Content/Minimap/Capture_Iteration_Discovered_BlastBerry.Capture_Iteration_Discovered_BlastBerry",
-    // "Venture")
+    ("FortniteGame/Plugins/GameFeatures/632de27e-4506-41f8-532f-93ac01dc10ca/Content/Maps/PunchBerry_Terrain.PunchBerry_Terrain",
+     "FortniteGame/Plugins/GameFeatures/BlastBerryMapUI/Content/Minimap/Discovered_PunchBerry.Discovered_PunchBerry",
+     "Oasis"),
+    ("FortniteGame/Plugins/GameFeatures/fd242d06-46d5-d389-1a48-2fb3bb65c2a1/Content/Maps/BlastBerry_Terrain.BlastBerry_Terrain",
+     "FortniteGame/Plugins/GameFeatures/BlastBerryMapUI/Content/Minimap/Capture_Iteration_Discovered_BlastBerry.Capture_Iteration_Discovered_BlastBerry",
+     "Venture")
 })
 {
     var wexport = new WorldExport()

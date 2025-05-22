@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using SkiaSharp;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using System;
+using System.Diagnostics;
 
 namespace FortMapper
 {
@@ -205,17 +206,23 @@ namespace FortMapper
                 }
             }
 
-            // This works but is kinda scuffed, the other way to do it would be to get it from
-            // World -> PersistentLevel -> WorldSettings -> WorldPartition -> RuntimeHash -> RuntimeStreamingData -> MainPartition ->
-            // SpatiallyLoadedCells -> (foreach) -> LevelStreaming -> WorldAsset -> PersistentLevel
-            foreach (var file in GlobalProvider.Files)
-            {
-                if (file.Key.EndsWith(".umap") && file.Key.Contains($"{MapName}/_Generated_/"))
+            var world_settings = level!.Get<UObject>("WorldSettings");
+            var world_partition = world_settings!.Get<UObject>("WorldPartition");
+            var runtime_hash = world_partition!.Get<UObject>("RuntimeHash");
+            if (runtime_hash!.TryGet<FStructFallback[]>("RuntimeStreamingData", out var runtime_streaming_data)) {
+                // NonSpatiallyLoadedCells?
+                foreach (var cell in runtime_streaming_data[0].Get<UObject[]>("SpatiallyLoadedCells"))
                 {
-                    level = GlobalProvider.LoadPackageObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
-                    foreach (var actor in level.Actors)
+                    var level_streaming = cell.Get<UObject>("LevelStreaming");
+                    var wrld = level_streaming.Get<FSoftObjectPath>("WorldAsset").Load<UWorld>();
+                    var lvl = wrld.PersistentLevel.Load<ULevel>();
+                    foreach (var actor in lvl!.Actors)
                         ParseActor(actor);
                 }
+            }
+            else if (runtime_hash!.TryGet<FStructFallback[]>("StreamingGrids", out var streaming_grids))
+            {
+                Console.WriteLine("not implemented streaming grids");
             }
 
             return true;
