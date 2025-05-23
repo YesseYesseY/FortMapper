@@ -198,6 +198,71 @@ function parse_treasure(ltd_name) {
     });
 }
 
+function parse_vending(ltd_name) {
+    const vending_weights = [
+        {
+            name: "Common",
+            weight: 10,
+            stuff: []
+        },
+        {
+            name: "Uncommon",
+            weight: 20,
+            stuff: []
+        },
+        {
+            name: "Rare",
+            weight: 20,
+            stuff: []
+        },
+        {
+            name: "Epic",
+            weight: 7.5,
+            stuff: []
+        },
+        {
+            name: "Legendary",
+            weight: 5.0,
+            stuff: []
+        }
+    ];
+    const thingyes = {
+        "Common": 0,
+        "Uncommon": 1,
+        "Rare": 2,
+        "Epic": 3,
+        "Legendary": 4,
+    }
+
+    data["LTD"][ltd_name].forEach(e => {
+        const rarity = e.loot_package.split('.')[4];
+        if (e.loot_package.startsWith("WorldList"))
+            vending_weights[thingyes[rarity]].stuff.push(e);
+        else
+            vending_weights[thingyes[rarity]].stuff.push({
+                weight: e.weight,
+                loot_package: data["LP"][e.loot_package][0].loot_package_call
+            });
+    });
+
+    const vending_total_weight = get_total_weight(Object.values(vending_weights));
+    for (let i = 0; i < vending_weights.length; i++) {
+        const rarity_chance = vending_weights[i].weight / vending_total_weight;
+        const item_container = create_item_container(vending_weights[i].name, rarity_chance);
+
+        loot_place.appendChild(item_container);
+
+        const stuff_total_weight = get_total_weight(vending_weights[i].stuff);
+        vending_weights[i].stuff.forEach(e => {
+            const stuff_chance = e.weight / stuff_total_weight;
+            const lpc_chance = get_total_weight(data["LPC"][e.loot_package]);
+            data["LPC"][e.loot_package].forEach(e2 => {
+                item_container.appendChild(item_to_card(e2, stuff_chance, e2.weight / lpc_chance));
+            });
+        });
+    }
+}
+
 ltd_input.addEventListener("change", (change_event) => {
     loot_place.innerHTML = "";
     if (change_event.target.value == "") return;
@@ -215,6 +280,9 @@ ltd_input.addEventListener("change", (change_event) => {
         case "Loot_AthenaFloorLoot":
         case "Loot_AthenaFloorLoot_Warmup":
             parse_default(change_event.target.value, [1, 0, 0, 0, 0]);
+            break;
+        case "Loot_AthenaVending":
+            parse_vending(change_event.target.value);
             break;
         default:
             console.log(change_event.target.value);

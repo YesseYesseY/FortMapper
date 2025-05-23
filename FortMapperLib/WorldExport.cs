@@ -136,7 +136,7 @@ namespace FortMapper
                         if (File.Exists(Path.Join(OutPath, "Images", $"{actor.Class!.Name}.png")))
                         {
                             exported_icon = true;
-                            break;
+                            continue;
                         }
                         UObject? current_cdo = ((UClass)actor.Class!).ClassDefaultObject.Load();
                         while (current_cdo is not null)
