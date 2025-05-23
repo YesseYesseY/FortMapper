@@ -5,6 +5,9 @@ const actorButtons = document.getElementById("actor-buttons");
 /** @type CanvasRenderingContext2D */
 const ctx = canvas.getContext("2d");
 
+const coords_x = document.getElementById("coords-x");
+const coords_y = document.getElementById("coords-y");
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 window.addEventListener("resize", (e) => {
@@ -34,7 +37,22 @@ canvas.addEventListener("mousemove", (e) => {
         });
         zone_pos = new_zone_pos;
     }
+
     drawMap();
+
+    if (world.camera !== undefined) {
+        const worldmousepos = img_to_world({
+            X: e.offsetX,
+            Y: e.offsetY
+        });
+        coords_x.innerText = worldmousepos.X.toFixed(1);
+        coords_y.innerText = worldmousepos.Y.toFixed(1);
+
+        //const uwu = world_to_img(worldmousepos);
+        //ctx.fillStyle = "red";
+        //ctx.fillRect(uwu.X, uwu.Y, 20, 20);
+    }
+
 });
 
 var world = {};
@@ -91,12 +109,17 @@ function world_to_img(pos) {
     }
 }
 
-// TODO: Rotation, works fine on og but not main br
 function img_to_world(pos) {
+    let rotatedY = (((pos.X - img_pos.X) / (baseImageSize * imgZoom)) - 0.5) * world.camera.ortho_width;
+    let rotatedX = -(((pos.Y - img_pos.Y) / (baseImageSize * imgZoom)) - 0.5) * world.camera.ortho_width;
+    let rot = -((world.camera.rot.Roll + world.camera.relrot.Roll) * (Math.PI / 180));
+    let cos = Math.cos(rot);
+    let sin = Math.sin(rot);
+
     return {
-        X: -(((pos.Y - img_pos.Y) / (baseImageSize * imgZoom)) - 0.5) * world.camera.ortho_width + world.camera.pos.X,
-        Y: (((pos.X - img_pos.X) / (baseImageSize * imgZoom)) - 0.5) * world.camera.ortho_width + world.camera.pos.Y,
-    }
+        X: (rotatedX * cos + rotatedY * sin) + world.camera.pos.X,
+        Y: (-rotatedX * sin + rotatedY * cos) + world.camera.pos.Y,
+    };
 }
 
 function drawMap() {

@@ -49,6 +49,14 @@ const translation_table = {
     "WorldList.AthenaSupplyDrop.Weapon.Handgun": "Pistols",
     "WorldList.AthenaSupplyDrop.Weapon.SMG": "SMGs",
     "WorldList.AthenaLoot.Empty": "Empty",
+    "WorldList.AthenaLlama.Wood": "Wood",
+    "WorldList.AthenaLlama.Stone": "Stone",
+    "WorldList.AthenaLlama.Metal": "Metal",
+    "WorldList.AthenaLoot.Ammo.Rockets": "Rocket Ammo",
+    "WorldList.AthenaLoot.Ammo.Heavy": "Heavy Ammo",
+    "WorldList.AthenaLoot.Ammo.Medium": "Medium Ammo",
+    "WorldList.AthenaLoot.Ammo.Light": "Light Ammo",
+    "WorldList.AthenaLoot.Ammo.Shells": "Shells",
     "Handmade": "Common",
     "Sturdy": "Rare",
     "Quality": "Epic",
@@ -129,15 +137,20 @@ function item_to_card(item, ltd_chance, lpc_chance) {
     );
 }
 
-function parse_default(ltd_name, ignore_ammo = false, worldpkg_search_limit = 999) {
+function parse_default(ltd_name, worldpkg_counts = []) {
     const ltd_total_weight = get_total_weight(data["LTD"][ltd_name]);
 
     const lpcs = {};
-    function addtolpcs(weight, name) {
-        if (name in lpcs)
-            lpcs[name] += weight;
-        else
-            lpcs[name] = weight;
+    function addtolpcs(weight, name, count = 1) {
+        if (name in lpcs) {
+            lpcs[name].weight += weight
+        }
+        else {
+            lpcs[name] = {
+                "weight": weight,
+                "count": count
+            };
+        }
     }
 
     data["LTD"][ltd_name].forEach(e => {
@@ -146,20 +159,18 @@ function parse_default(ltd_name, ignore_ammo = false, worldpkg_search_limit = 99
         } else {
             const thingy = data["LP"][e.loot_package];
             for (let i = 0; i < thingy.length; i++) {
-                if (i == worldpkg_search_limit) break;
+                if (worldpkg_counts[i] == 0) continue
                 const e2 = thingy[i];
-                addtolpcs(e.weight, e2.loot_package_call)
+                addtolpcs(e.weight, e2.loot_package_call, worldpkg_counts[i] == undefined ? 1 : worldpkg_counts[i]);
             }
         }
     })
 
-    for (const [lpc_name, lpc_weight] of Object.entries(lpcs)) {
-        if(ignore_ammo && lpc_name.includes(".Ammo.")) continue;
-
-        const item_container = create_item_container(lpc_name, lpc_weight / ltd_total_weight);
+    for (const [lpc_name, lpc_data] of Object.entries(lpcs)) {
+        const item_container = create_item_container(`${(lpc_data.count > 1 ? `${lpc_data.count}x ` : "")}${parse_name(lpc_name)}`, lpc_data.weight / ltd_total_weight);
         const lpc_total_weight = get_total_weight(data["LPC"][lpc_name]);
 
-        data["LPC"][lpc_name].forEach(thing => item_container.appendChild(item_to_card(thing, lpc_weight / ltd_total_weight, thing.weight / lpc_total_weight)));
+        data["LPC"][lpc_name].forEach(thing => item_container.appendChild(item_to_card(thing, lpc_data.weight / ltd_total_weight, thing.weight / lpc_total_weight)));
         loot_place.appendChild(item_container);
     }
 }
@@ -184,7 +195,7 @@ function parse_treasure(ltd_name) {
         const lpc_total_weight = get_total_weight(data["LPC"][thing[0].loot_package_call]);
         data["LPC"][thing[0].loot_package_call].forEach(e => item_container.appendChild(item_to_card(e, e3.weight / ltd_total_weight, e.weight / lpc_total_weight)));
         loot_place.appendChild(item_container);
-    })
+    });
 }
 
 ltd_input.addEventListener("change", (change_event) => {
@@ -196,11 +207,14 @@ ltd_input.addEventListener("change", (change_event) => {
             parse_treasure(change_event.target.value);
             break;
         case "Loot_AthenaSupplyDrop":
-            parse_default(change_event.target.value, true);
+            parse_default(change_event.target.value, [1, 0, 3, 2, 1]);
+            break;
+        case "Loot_AthenaLlama":
+            parse_default(change_event.target.value, [20, 20, 20, 10, 10, 1, 1, 1, 3, 3]);
             break;
         case "Loot_AthenaFloorLoot":
         case "Loot_AthenaFloorLoot_Warmup":
-            parse_default(change_event.target.value, false, 1);
+            parse_default(change_event.target.value, [1, 0, 0, 0, 0]);
             break;
         default:
             console.log(change_event.target.value);

@@ -23,6 +23,7 @@ using SkiaSharp;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using System;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace FortMapper
 {
@@ -132,6 +133,11 @@ namespace FortMapper
 
                         if (exported_icon) continue;
 
+                        if (File.Exists(Path.Join(OutPath, "Images", $"{actor.Class!.Name}.png")))
+                        {
+                            exported_icon = true;
+                            break;
+                        }
                         UObject? current_cdo = ((UClass)actor.Class!).ClassDefaultObject.Load();
                         while (current_cdo is not null)
                         {

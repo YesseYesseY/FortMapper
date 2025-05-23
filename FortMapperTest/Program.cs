@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 GlobalProvider.Init();
 
-#if false
+#if true
 
 LootExport.Hotfixes = @"
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaFloorLoot_07;Weight;0.000000
@@ -64,7 +64,8 @@ LootExport.Yes(
 ).Export(true);
 #endif
 
-#if true
+#if false
+List<Task> tasks = new();
 foreach (var thing in new (string, string, string)[]
 {
     ("FortniteGame/Plugins/GameFeatures/BRMapCh6/Content/Maps/Hermes_Terrain.Hermes_Terrain",
@@ -84,26 +85,31 @@ foreach (var thing in new (string, string, string)[]
      "Venture")
 })
 {
-    var wexport = new WorldExport()
+    tasks.Add(Task.Run(() =>
     {
-        JsonFormatting = Formatting.Indented,
-        OutputActorClasses = true,
-        ActorsToExport =
-    {
-        "Tiered_Chest_6_Figment_C",
-        "Tiered_Ammo_Figment_C",
-        "B_BGA_Athena_EnvCampFire_C",
-        "B_Athena_VendingMachine_Figment_C",
-        "BGA_Athena_SCMachine_Figment_C",
-        "Tiered_Chest_Athena_C",
-        "Tiered_Ammo_Athena_C",
-        "Tiered_Chest_Sunflower_C"
-    }
-    };
-    var world = GlobalProvider.LoadPackageObject<UWorld>(thing.Item1);
-    var minimap = GlobalProvider.LoadPackageObject<UTexture2D>(thing.Item2);
-    wexport.Parse(world, minimap);
-    wexport.Export(thing.Item3);
+        var wexport = new WorldExport()
+        {
+            JsonFormatting = Formatting.Indented,
+            OutputActorClasses = true,
+            ActorsToExport =
+            {
+                "Tiered_Chest_6_Figment_C",
+                "Tiered_Ammo_Figment_C",
+                "B_BGA_Athena_EnvCampFire_C",
+                "B_Athena_VendingMachine_Figment_C",
+                "BGA_Athena_SCMachine_Figment_C",
+                "Tiered_Chest_Athena_C",
+                "Tiered_Ammo_Athena_C",
+                "Tiered_Chest_Sunflower_C"
+            }
+        };
+        var world = GlobalProvider.LoadPackageObject<UWorld>(thing.Item1);
+        var minimap = GlobalProvider.LoadPackageObject<UTexture2D>(thing.Item2);
+        wexport.Parse(world, minimap);
+        wexport.Export(thing.Item3);
+    }));
 }
+
 ExportUtils.ExportTexture2D("FortniteGame/Plugins/GameFeatures/Creative/Devices/CRD_RebootVan/Content/SetupAssets/ID/T_Icon_PS_CP_Device_RebootVan.T_Icon_PS_CP_Device_RebootVan", "./World/Images/BGA_Athena_SCMachine_Figment_C.png");
+Task.WaitAll(tasks);
 #endif
