@@ -57,6 +57,9 @@ const translation_table = {
     "WorldList.AthenaLoot.Ammo.Medium": "Medium Ammo",
     "WorldList.AthenaLoot.Ammo.Light": "Light Ammo",
     "WorldList.AthenaLoot.Ammo.Shells": "Shells",
+    "WorldList.ClaimPOI.Reward.HealingConsumables": "Healing Consumables",
+    "WorldList.Consumable.Mobility": "Mobility Consumables",
+    "WorldList.Weapons.Rarity.Epic": "Epic Weapons",
     "Handmade": "Common",
     "Sturdy": "Rare",
     "Quality": "Epic",
@@ -83,6 +86,14 @@ data_input.addEventListener("change", (e) => {
                     "loot_package_call": "WorldList.AthenaLoot.Resources"
                 }
             ];
+
+            let to_remove = [];
+            for (let i = 0; i < ltd_input.children.length; i++) {
+                let child = ltd_input.children[i];
+                if (child.value !== "" && !(child.value in data["LTD"]))
+                    to_remove.push(child);
+            }
+            to_remove.forEach(e => ltd_input.removeChild(e));
         });
         reader.readAsText(f);
 
@@ -104,6 +115,8 @@ function to_percent(val) {
 }
 
 function get_total_weight(thing) {
+    if (thing === undefined)
+        return 0;
     var ret = 0;
     thing.forEach(e => ret += e.weight);
     return ret;
@@ -167,6 +180,7 @@ function parse_default(ltd_name, worldpkg_counts = []) {
     })
 
     for (const [lpc_name, lpc_data] of Object.entries(lpcs)) {
+        if (data["LPC"][lpc_name] === undefined) continue;
         const item_container = create_item_container(`${(lpc_data.count > 1 ? `${lpc_data.count}x ` : "")}${parse_name(lpc_name)}`, lpc_data.weight / ltd_total_weight);
         const lpc_total_weight = get_total_weight(data["LPC"][lpc_name]);
 
@@ -264,12 +278,18 @@ function parse_vending(ltd_name) {
 }
 
 ltd_input.addEventListener("change", (change_event) => {
+    if (ltd_input.children[0].value == "")
+        ltd_input.removeChild(ltd_input.children[0]);
+
     loot_place.innerHTML = "";
     if (change_event.target.value == "") return;
 
     switch (change_event.target.value) {
         case "Loot_AthenaTreasure":
+            // parse_treasure and parse_default is basically the same 
+            // except that resources have a 92 % chance on default because miniguns dont drop resources ;-;
             parse_treasure(change_event.target.value);
+            //parse_default(change_event.target.value, [1, 0, 1, 1, 1]);
             break;
         case "Loot_AthenaSupplyDrop":
             parse_default(change_event.target.value, [1, 0, 3, 2, 1]);
@@ -280,6 +300,9 @@ ltd_input.addEventListener("change", (change_event) => {
         case "Loot_AthenaFloorLoot":
         case "Loot_AthenaFloorLoot_Warmup":
             parse_default(change_event.target.value, [1, 0, 0, 0, 0]);
+            break;
+        case "Loot_Golden_Llama":
+            parse_default(change_event.target.value, [1, 1, 0, 0, 0]);
             break;
         case "Loot_AthenaVending":
             parse_vending(change_event.target.value);
