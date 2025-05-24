@@ -49,12 +49,31 @@ namespace FortMapper
         [JsonProperty("aspect_ratio")]
         public readonly float AspectRatio = 1.0f;
     }
+    public class ActorGroup
+    {
+        public ActorGroup(string name, string icon_path, params string[] classes)
+        {
+            Name = name;
+            Classes = classes;
+            Icon = GlobalProvider.LoadPackageObject<UTexture2D>(icon_path);
+            Positions = new();
+            Disabled = false;
+        }
+        [JsonProperty("name")]
+        public string Name;
+        [JsonProperty("classes")]
+        public string[] Classes;
+        [JsonIgnore]
+        public UTexture2D Icon;
+        [JsonProperty("positions")]
+        public List<FVector> Positions;
+        [JsonProperty("disabled")]
+        public bool Disabled;
+    }
     public class WorldExport
     {
         [JsonIgnore]
         public string OutPath = "./World/";
-        [JsonIgnore]
-        public List<string> ActorsToExport = new();
         [JsonIgnore]
         public bool OutputActorClasses = false;
         [JsonIgnore]
@@ -68,29 +87,27 @@ namespace FortMapper
         [JsonIgnore]
         public Dictionary<string, int> ActorClasses = new();
 
-
         [JsonProperty("actors")]
-        public Dictionary<string, List<Vector3>> Actors = new();
+        public List<ActorGroup> ActorGroups = new()
+        {
+            new("Chests", "FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T-T-Icon-BR-SM-Athena-Chest-01.T-T-Icon-BR-SM-Athena-Chest-01", "Tiered_Chest_6_Figment_C", "Tiered_Chest_Sunflower_C", "Tiered_Chest_Athena_C", "AlwaysSpawn_NormalChest_C"),
+            new("Rare Chests", "FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T-T-Icon-BR-RareBlueChest.T-T-Icon-BR-RareBlueChest", "AlwaysSpawn_RareChest_C"),
+            new("Ammo Boxes", "FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T-T-Icon-BR-AmmoBoxMarkIII.T-T-Icon-BR-AmmoBoxMarkIII", "Tiered_Ammo_Figment_C", "Tiered_Ammo_Athena_C"),
+            new("Campfires", "FortniteGame/Content/Athena/Items/Traps/CampFire/T-Icon-BR-SM-Athena-Campfire.T-Icon-BR-SM-Athena-Campfire", "B_BGA_Athena_EnvCampFire_C", "BP_BGA_Outdoor_Campfire_A_C"),
+            new("Reboot Vans", "FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T_Icon_BR_RebootVan_BuyBack.T_Icon_BR_RebootVan_BuyBack", "BGA_Athena_SCMachine_Figment_C", "BGA_Athena_SCMachine_Redux_C"),
+            new("Vending Machines", "FortniteGame/Content/Athena/HUD/Interaction/T_UI_VendingMachine.T_UI_VendingMachine", "B_Athena_VendingMachine_Figment_C"),
+            new("Rifts", "FortniteGame/Content/Athena/HUD/Interaction/T_UI_NPC_Rift.T_UI_NPC_Rift", "BGA_RiftPortal_Figment_C"),
+        };
         [JsonProperty("pois")]
         public Dictionary<string, Vector3> POIs = new();
+        [JsonProperty("ziplines")]
+        public List<(FVector start, FVector end)> Ziplines = new();
         [JsonProperty("camera")]
         public CameraProperties Camera = new();
         [JsonProperty("minimap_path")]
         public string MinimapPath = "";
         [JsonProperty("map_name")]
         public string MapName = "";
-
-        private bool TryGetIcon(UObject obj, string name)
-        {
-            if (obj.TryGet("MarkerDisplay", out FStructFallback? md) &&
-                md!.TryGet("Icon", out FSoftObjectPath iconpath) && iconpath.TryLoad<UTexture2D>(out UTexture2D? icon_texture))
-            {
-                File.WriteAllBytes(Path.Join(OutPath, "Images", $"{name}.png"), icon_texture!.Decode()!.Encode(ETextureFormat.Png, out string ext));
-                return true;
-            }
-
-            return false;
-        }
 
         private void ParseActor(FPackageIndex? pi)
         {
@@ -120,37 +137,27 @@ namespace FortMapper
 
                 ActorClasses[pi.ResolvedObject.Class.Name.Text]++;
 
-                foreach (var class_name in ActorsToExport)
+                switch (pi.ResolvedObject.Class.Name.Text)
                 {
-                    bool exported_icon = false;
-                    if (pi.ResolvedObject.Class.Name.PlainText == class_name &&
-                        pi.ResolvedObject.TryLoad(out UObject actor))
-                    {
-                        if (actor.TryGetValue(out USceneComponent? smc, "StaticMeshComponent", "RootComponent", "Root"))
+                    case "BP_Athena_Environmental_ZipLine_Spline_C":
+                        var spline = pi.Load();
+                        Ziplines.Add((spline!.Get<FVector>("HigherEndLocation"), spline!.Get<FVector>("LowerEndLocation")));
+                        break;
+                    default:
+                        foreach (var actor_group in ActorGroups)
                         {
-                            Actors[class_name].Add(smc!.GetRelativeLocation());
-                        }
-
-                        if (exported_icon) continue;
-
-                        if (File.Exists(Path.Join(OutPath, "Images", $"{actor.Class!.Name}.png")))
-                        {
-                            exported_icon = true;
-                            continue;
-                        }
-                        UObject? current_cdo = ((UClass)actor.Class!).ClassDefaultObject.Load();
-                        while (current_cdo is not null)
-                        {
-                            if (TryGetIcon(current_cdo, actor.Class!.Name))
+                            if (actor_group.Classes.Contains(pi.ResolvedObject.Class.Name.PlainText) &&
+                                pi.ResolvedObject.TryLoad(out UObject actor))
                             {
-                                exported_icon = true;
-                                break;
+                                if (actor.TryGetValue(out USceneComponent? smc, "StaticMeshComponent", "RootComponent", "Root"))
+                                {
+                                    actor_group.Positions.Add(smc!.GetRelativeLocation());
+                                }
                             }
-
-                            current_cdo = current_cdo.Template?.Load();
                         }
-                    }
+                        break;
                 }
+
                     
             }
         }
@@ -170,6 +177,11 @@ namespace FortMapper
                 ExportUtils.ExportTexture2D(MinimapTexture, ExportUtils.ValidFileName(Path.Join(OutPath, MinimapPath)));
             }
 
+            foreach (var actor_group in ActorGroups)
+            {
+                ExportUtils.ExportTexture2D(actor_group.Icon, ExportUtils.ValidFileName(Path.Join(OutPath, "Images", $"{actor_group.Name}.png")));
+            }
+
             File.WriteAllText(Path.Join(OutPath, ExportUtils.ValidFileName($"{(custom_name is not null ? custom_name : "MapName")}.json")), JsonConvert.SerializeObject(this, JsonFormatting));
         }
 
@@ -179,9 +191,6 @@ namespace FortMapper
 
             if (QuestIndicatorData is null)
                 QuestIndicatorData = GlobalProvider.LoadPackageObject("FortniteGame/Content/Quests/QuestIndicatorData.QuestIndicatorData");
-
-            foreach (var class_name in ActorsToExport)
-                Actors[class_name] = new();
 
             MinimapTexture = minimap;
 

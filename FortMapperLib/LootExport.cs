@@ -35,6 +35,8 @@ namespace FortMapper
         public float Weight;
         [JsonProperty("loot_package")]
         public string LootPackage;
+        [JsonProperty("loot_package_category_min_array")]
+        public int[] LootPackageCategoryMinArray;
     }
 
     public struct LootPackage
@@ -50,6 +52,7 @@ namespace FortMapper
         public float Weight;
         public string LootPackage;
         public string TierGroup;
+        public int[] LootPackageCategoryMinArray;
     }
 
     public class TempLootPackage
@@ -187,7 +190,8 @@ namespace FortMapper
                     {
                         LootPackage = row.Value.Get<FName>("LootPackage").Text,
                         Weight = row.Value.Get<float>("Weight"),
-                        TierGroup = row.Value.Get<FName>("TierGroup").Text
+                        TierGroup = row.Value.Get<FName>("TierGroup").Text,
+                        LootPackageCategoryMinArray = row.Value.Get<int[]>("LootPackageCategoryMinArray")
                     };
                 }
 
@@ -286,7 +290,7 @@ namespace FortMapper
                 if (!ret.LTD.ContainsKey(tg))
                     ret.LTD[tg] = new();
 
-                ret.LTD[tg].Add(new LootTierData { Weight = weight, LootPackage = lp });
+                ret.LTD[tg].Add(new LootTierData { Weight = weight, LootPackage = lp, LootPackageCategoryMinArray = thingy.Value.LootPackageCategoryMinArray });
             }
 
             foreach (var thingy in TEMP_LP)

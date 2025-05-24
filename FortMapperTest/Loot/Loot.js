@@ -60,6 +60,7 @@ const translation_table = {
     "WorldList.ClaimPOI.Reward.HealingConsumables": "Healing Consumables",
     "WorldList.Consumable.Mobility": "Mobility Consumables",
     "WorldList.Weapons.Rarity.Epic": "Epic Weapons",
+    "WorldList.GoldLlama.GoldBars": "Bars",
     "Handmade": "Common",
     "Sturdy": "Rare",
     "Quality": "Epic",
@@ -152,6 +153,12 @@ function item_to_card(item, ltd_chance, lpc_chance) {
 
 function parse_default(ltd_name, worldpkg_counts = []) {
     const ltd_total_weight = get_total_weight(data["LTD"][ltd_name]);
+    let lpcma = data["LTD"][ltd_name][0].loot_package_category_min_array;
+    for (let i = 0; i < lpcma.length; i++) {
+        if (worldpkg_counts[i] === undefined || worldpkg_counts[i] === -1) {
+            worldpkg_counts[i] = lpcma[i];
+        }
+    }
 
     const lpcs = {};
     function addtolpcs(weight, name, count = 1) {
@@ -187,29 +194,6 @@ function parse_default(ltd_name, worldpkg_counts = []) {
         data["LPC"][lpc_name].forEach(thing => item_container.appendChild(item_to_card(thing, lpc_data.weight / ltd_total_weight, thing.weight / lpc_total_weight)));
         loot_place.appendChild(item_container);
     }
-}
-
-function parse_treasure(ltd_name) {
-    const current_ltd = data["LTD"][ltd_name];
-    const ltd_total_weight = get_total_weight(current_ltd);
-
-    {
-        const thing = data["LP"][current_ltd[0].loot_package];
-        for (let i = 2; i < thing.length; i++) {
-            const item_container = create_item_container(thing[i].loot_package_call, 1);
-            const lpc_total_weight = get_total_weight(data["LPC"][thing[i].loot_package_call]);
-            data["LPC"][thing[i].loot_package_call].forEach(e => item_container.appendChild(item_to_card(e, 1, e.weight / lpc_total_weight)));
-            loot_place.appendChild(item_container);
-        }
-    }
-
-    current_ltd.forEach(e3 => {
-        const thing = data["LP"][e3.loot_package];
-        const item_container = create_item_container(thing[0].loot_package_call, e3.weight / ltd_total_weight);
-        const lpc_total_weight = get_total_weight(data["LPC"][thing[0].loot_package_call]);
-        data["LPC"][thing[0].loot_package_call].forEach(e => item_container.appendChild(item_to_card(e, e3.weight / ltd_total_weight, e.weight / lpc_total_weight)));
-        loot_place.appendChild(item_container);
-    });
 }
 
 function parse_vending(ltd_name) {
@@ -286,29 +270,19 @@ ltd_input.addEventListener("change", (change_event) => {
 
     switch (change_event.target.value) {
         case "Loot_AthenaTreasure":
-            // parse_treasure and parse_default is basically the same 
-            // except that resources have a 92 % chance on default because miniguns dont drop resources ;-;
-            parse_treasure(change_event.target.value);
-            //parse_default(change_event.target.value, [1, 0, 1, 1, 1]);
+            parse_default(change_event.target.value, [-1, -1, -1, -1, -1, 1]);
             break;
         case "Loot_AthenaSupplyDrop":
-            parse_default(change_event.target.value, [1, 0, 3, 2, 1]);
-            break;
         case "Loot_AthenaLlama":
-            parse_default(change_event.target.value, [20, 20, 20, 10, 10, 1, 1, 1, 3, 3]);
-            break;
         case "Loot_AthenaFloorLoot":
         case "Loot_AthenaFloorLoot_Warmup":
-            parse_default(change_event.target.value, [1, 0, 0, 0, 0]);
-            break;
         case "Loot_Golden_Llama":
-            parse_default(change_event.target.value, [1, 1, 0, 0, 0]);
+            parse_default(change_event.target.value);
             break;
         case "Loot_AthenaVending":
             parse_vending(change_event.target.value);
             break;
         default:
-            console.log(change_event.target.value);
             parse_default(change_event.target.value);
             break;
     }

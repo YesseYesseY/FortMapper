@@ -72,6 +72,7 @@ var imgZoom = 1;
 
 var dragging = "";
 var drawPois = false;
+var drawZiplines = false;
 
 var zone_pos = {
     X: 0,
@@ -128,6 +129,16 @@ function drawMap() {
 
     ctx.font = "bold 18px arial";
     ctx.fillStyle = "black";
+
+    for (let j = 0; j < world.actors.length; j++) {
+        for (let i = 0; i < world.actors[j].positions.length; i++) {
+            if (world.actors[j].disabled) continue;
+
+            let map_pos = world_to_img(world.actors[j].positions[i]);
+            ctx.drawImage(actorimages[world.actors[j].name], map_pos.X - (iconSize / 2), map_pos.Y - (iconSize / 2), iconSize, iconSize);
+        }
+    }
+
     if (drawPois) {
         for (const [poiname, poilocation] of Object.entries(world.pois)) {
             let map_pos = world_to_img(poilocation);
@@ -136,12 +147,16 @@ function drawMap() {
         }
     }
 
-    for (let j = 0; j < actornames.length; j++) {
-        for (let i = 0; i < world.actors[actornames[j]].length; i++) {
-            if (world.actors[actornames[j]].disabled) continue;
+    ctx.lineWidth = 2;
 
-            let map_pos = world_to_img(world.actors[actornames[j]][i]);
-            ctx.drawImage(actorimages[actornames[j]], map_pos.X - (iconSize / 2), map_pos.Y - (iconSize / 2), iconSize, iconSize);
+    if (drawZiplines) {
+        for (let i = 0; i < world.ziplines.length; i++) {
+            const pos1 = world_to_img(world.ziplines[i].Item1);
+            const pos2 = world_to_img(world.ziplines[i].Item2);
+            ctx.beginPath();
+            ctx.moveTo(pos1.X, pos1.Y);
+            ctx.lineTo(pos2.X, pos2.Y);
+            ctx.stroke();
         }
     }
 }
@@ -181,20 +196,23 @@ function maindraw() {
     zone_pos.Y = world.camera.pos.Y;
     actorButtons.innerHTML = "";
     drawPois = false;
-    for (let i = 0; i < actornames.length; i++) {
-        if (Object.values(world.actors[actornames[i]]).length == 0) continue;
+    drawZiplines = false;
 
-        world.actors[actornames[i]].disabled = true;
-        actorButtons.innerHTML += `<input id="toggle-${i}" onclick="toggleActor('${actornames[i]}')" type="checkbox"><label onclick="document.getElementById('toggle-${i}').click()">${actornames[i]}</label><br>`;
+    for (let i = 0; i < world.actors.length; i++) {
+        if (world.actors[i].positions.length == 0) continue;
 
-        actorimages[actornames[i]] = (() => {
+        world.actors[i].disabled = true;
+        actorButtons.innerHTML += `<input id="toggle-${i}" onclick="toggleActor(${i})" type="checkbox"><label onclick="document.getElementById('toggle-${i}').click()">${world.actors[i].name}</label><br>`;
+
+        actorimages[world.actors[i].name] = (() => {
             const actorimg = new Image();
-            actorimg.src = `./Images/${actornames[i]}.png`;
+            actorimg.src = `./Images/${world.actors[i].name}.png`;
             actorimg.addEventListener("load", () => drawMap());
             return actorimg;
         })();
     }
 
     actorButtons.innerHTML += `<input id="toggle-poi" onclick="drawPois = !drawPois;drawMap();" type="checkbox"><label onclick="document.getElementById('toggle-poi').click()">Draw POIs</label><br>`;
+    actorButtons.innerHTML += `<input id="toggle-zipline" onclick="drawZiplines = !drawZiplines;drawMap();" type="checkbox"><label onclick="document.getElementById('toggle-zipline').click()">Draw Ziplines</label><br>`;
 
 }
