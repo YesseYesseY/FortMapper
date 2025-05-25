@@ -186,7 +186,8 @@ LootExport.Hotfixes = @"
 ";
 
 LootExport.Yes(
-    "FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
+    "FortniteGame/Plugins/GameFeatures/BlastBerry/Content/Playlists/Playlist_DashBerrySolo.Playlist_DashBerrySolo"
+    //"FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
     //"FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo"
 ).Export(true);
 #endif
