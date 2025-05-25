@@ -9,8 +9,9 @@ using FortMapper;
 using Newtonsoft.Json;
 
 GlobalProvider.Init();
+GameFeatureStuff.Init();
 
-#if false
+#if true
 
 LootExport.Hotfixes = @"
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaFloorLoot_07;Weight;0.000000
@@ -185,26 +186,12 @@ LootExport.Hotfixes = @"
 ";
 
 LootExport.Yes(
-#if false // OG ZB
-    ("FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LTD_Figment.NoBuild_Composite_LTD_Figment",
-     "FortniteGame/Plugins/GameFeatures/Figment/Figment_LootTables/Content/DataTables/NoBuild/NoBuild_Composite_LP_Figment.NoBuild_Composite_LP_Figment")
-#endif
-    //"FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
+    "FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
     //"FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo"
-
-#if true // BR
-    ("FortniteGame/Content/Athena/Playlists/AthenaCompositeLTD.AthenaCompositeLTD",
-     "FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/AthenaCompositeLP.AthenaCompositeLP"),
-    ("FortniteGame/Plugins/GameFeatures/LootCurrentSeason/Content/DataTables/LootCurrentSeasonLootTierData_Client.LootCurrentSeasonLootTierData_Client",
-     "FortniteGame/Plugins/GameFeatures/LootCurrentSeason/Content/DataTables/LootCurrentSeasonLootPackages_Client.LootCurrentSeasonLootPackages_Client"),
-    ("FortniteGame/Plugins/GameFeatures/JethroLoot/Content/DataTables/JethroLootTierData.JethroLootTierData",
-     "FortniteGame/Plugins/GameFeatures/JethroLoot/Content/DataTables/JethroLootPackages.JethroLootPackages")
-#endif
-
 ).Export(true);
 #endif
 
-#if true
+#if false
 List<Task> tasks = new();
 foreach (var thing in new (string, string, string)[]
 {
@@ -230,7 +217,8 @@ foreach (var thing in new (string, string, string)[]
         var wexport = new WorldExport()
         {
             JsonFormatting = Formatting.Indented,
-            OutputActorClasses = true
+            OutputActorClasses = true,
+            //UseScuffedScan = true
         };
         var world = GlobalProvider.LoadPackageObject<UWorld>(thing.Item1);
         var minimap = GlobalProvider.LoadPackageObject<UTexture2D>(thing.Item2);

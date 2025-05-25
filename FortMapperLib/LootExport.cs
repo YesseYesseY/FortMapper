@@ -21,6 +21,7 @@ using CUE4Parse.UE4.Assets.Utils;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Core.Misc;
+using CUE4Parse.UE4.Objects.GameplayTags;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.UE4.Versions;
 using CUE4Parse_Conversion.Textures;
@@ -168,6 +169,16 @@ namespace FortMapper
 
             var playlist = GlobalProvider.LoadPackageObject<UObject>(playlist_path);
             paths.Add((playlist.Get<FSoftObjectPath>("LootTierData").AssetPathName.PlainText, playlist.Get<FSoftObjectPath>("LootPackages").AssetPathName.PlainText));
+            foreach (var tag in playlist.Get<FGameplayTagContainer>("GameplayTagContainer"))
+            {
+                if (GameFeatureStuff.TagLoots.ContainsKey(tag.TagName.Text))
+                {
+                    foreach (var thingy in GameFeatureStuff.TagLoots[tag.TagName.Text])
+                    {
+                        paths.Add((thingy.ltd.AssetPathName.Text, thingy.lp.AssetPathName.Text));
+                    }
+                }
+            }
 
             return Yes(paths);
         }
@@ -176,17 +187,20 @@ namespace FortMapper
         {
             var ret = new LootExport();
 
-            Dictionary<string, TempLootTierData> TEMP_LTD = new();
-            Dictionary<string, TempLootPackage> TEMP_LP = new();
+            List<Dictionary<string, TempLootTierData>> TEMP_LTD = new();
+            List<Dictionary<string, TempLootPackage>> TEMP_LP = new();
 
             foreach (var lootpath in paths)
             {
                 var ltd_package = GlobalProvider.LoadPackageObject<UDataTable>(lootpath.ltd);
                 var lp_package = GlobalProvider.LoadPackageObject<UDataTable>(lootpath.lp);
 
+                var cur_temp_ltd = new Dictionary<string, TempLootTierData>();
+                var cur_temp_lp = new Dictionary<string, TempLootPackage>();
+
                 foreach (var row in ltd_package.RowMap)
                 {
-                    TEMP_LTD[row.Key.Text] = new TempLootTierData
+                    cur_temp_ltd[row.Key.Text] = new TempLootTierData
                     {
                         LootPackage = row.Value.Get<FName>("LootPackage").Text,
                         Weight = row.Value.Get<float>("Weight"),
@@ -197,7 +211,7 @@ namespace FortMapper
 
                 foreach (var row in lp_package.RowMap)
                 {
-                    TEMP_LP[row.Key.Text] = new TempLootPackage
+                    cur_temp_lp[row.Key.Text] = new TempLootPackage
                     {
                         ItemDef = row.Value.Get<FSoftObjectPath>("ItemDefinition"),
                         Weight = row.Value.Get<float>("Weight"),
@@ -236,7 +250,7 @@ namespace FortMapper
                             if (split[3] != "Weight")
                                 continue; // throw new NotImplementedException();
 
-                            TEMP_LTD[split[2]].Weight = float.Parse(split[4], CultureInfo.InvariantCulture);
+                            cur_temp_ltd[split[2]].Weight = float.Parse(split[4], CultureInfo.InvariantCulture);
                         }
                     }
 
@@ -272,61 +286,71 @@ namespace FortMapper
 
 
 
-                            TEMP_LP[split[2]].Weight = float.Parse(split[4], CultureInfo.InvariantCulture);
+                            cur_temp_lp[split[2]].Weight = float.Parse(split[4], CultureInfo.InvariantCulture);
                         }
                     }
 
                     parent_tables.Clear();
                 }
+
+                TEMP_LTD.Add(cur_temp_ltd);
+                TEMP_LP.Add(cur_temp_lp);
             }
 
-            foreach (var thingy in TEMP_LTD)
+            foreach (var majorthingy in TEMP_LTD)
             {
-                var tg = thingy.Value.TierGroup;
-                var lp = thingy.Value.LootPackage;
-                var weight = thingy.Value.Weight;
-                if (weight <= 0.0f) continue;
-
-                if (!ret.LTD.ContainsKey(tg))
-                    ret.LTD[tg] = new();
-
-                ret.LTD[tg].Add(new LootTierData { Weight = weight, LootPackage = lp, LootPackageCategoryMinArray = thingy.Value.LootPackageCategoryMinArray });
-            }
-
-            foreach (var thingy in TEMP_LP)
-            {
-                var lpc = thingy.Value.LootPackageCall;
-                var lpid = thingy.Value.LootPackageId;
-                var weight = thingy.Value.Weight;
-                if (weight <= 0.0f) continue;
-
-                if (lpc == "")
+                foreach (var thingy in majorthingy)
                 {
-                    // If its WorldList and has no itemdef just ignore
-                    if (thingy.Value.ItemDef.TryLoad(out UObject? itemdef))
-                    {
-                        var count = thingy.Value.CountRange;
-                        if (!ret.LPC.ContainsKey(lpid))
-                            ret.LPC[lpid] = new();
+                    var tg = thingy.Value.TierGroup;
+                    var lp = thingy.Value.LootPackage;
+                    var weight = thingy.Value.Weight;
+                    if (weight <= 0.0f) continue;
 
-                        ret.LPC[lpid].Add(new LootPackageCall
+                    if (!ret.LTD.ContainsKey(tg))
+                        ret.LTD[tg] = new();
+
+                    ret.LTD[tg].Add(new LootTierData { Weight = weight, LootPackage = lp, LootPackageCategoryMinArray = thingy.Value.LootPackageCategoryMinArray });
+                }
+            }
+
+            
+            foreach (var majorthingy in TEMP_LP)
+            {
+                foreach (var thingy in majorthingy)
+                {
+                    var lpc = thingy.Value.LootPackageCall;
+                    var lpid = thingy.Value.LootPackageId;
+                    var weight = thingy.Value.Weight;
+                    if (weight <= 0.0f) continue;
+
+                    if (lpc == "")
+                    {
+                        // If its WorldList and has no itemdef just ignore
+                        if (thingy.Value.ItemDef.TryLoad(out UObject? itemdef))
                         {
-                            ItemDef = itemdef,
-                            Weight = weight,
-                            ItemCount = count.X
+                            var count = thingy.Value.CountRange;
+                            if (!ret.LPC.ContainsKey(lpid))
+                                ret.LPC[lpid] = new();
+
+                            ret.LPC[lpid].Add(new LootPackageCall
+                            {
+                                ItemDef = itemdef,
+                                Weight = weight,
+                                ItemCount = count.X
+                            });
+                        }
+                    }
+                    else
+                    {
+                        if (!ret.LP.ContainsKey(lpid))
+                            ret.LP[lpid] = new();
+
+                        ret.LP[lpid].Add(new LootPackage
+                        {
+                            LootPackageCall = lpc,
+                            Weight = weight
                         });
                     }
-                }
-                else
-                {
-                    if (!ret.LP.ContainsKey(lpid))
-                        ret.LP[lpid] = new();
-
-                    ret.LP[lpid].Add(new LootPackage
-                    {
-                        LootPackageCall = lpc,
-                        Weight = weight
-                    });
                 }
             }
             

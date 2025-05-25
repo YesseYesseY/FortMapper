@@ -78,6 +78,8 @@ namespace FortMapper
         public bool OutputActorClasses = false;
         [JsonIgnore]
         public Formatting JsonFormatting = Formatting.None;
+        [JsonIgnore]
+        public bool UseScuffedScan = false;
 
         [JsonIgnore]
         public static UObject? QuestIndicatorData = null;
@@ -97,6 +99,7 @@ namespace FortMapper
             new("Reboot Vans", "FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T_Icon_BR_RebootVan_BuyBack.T_Icon_BR_RebootVan_BuyBack", "BGA_Athena_SCMachine_Figment_C", "BGA_Athena_SCMachine_Redux_C"),
             new("Vending Machines", "FortniteGame/Content/Athena/HUD/Interaction/T_UI_VendingMachine.T_UI_VendingMachine", "B_Athena_VendingMachine_Figment_C"),
             new("Rifts", "FortniteGame/Content/Athena/HUD/Interaction/T_UI_NPC_Rift.T_UI_NPC_Rift", "BGA_RiftPortal_Figment_C"),
+            //new("Dirtbike", "FortniteGame/Content/UI/Foundation/Textures/Icons/SkillTree/T-Icon-ST-Dirtbike-128.T-Icon-ST-Dirtbike-128", "LW_DirtbikeVehicle_Spawner_C"),
         };
         [JsonProperty("pois")]
         public Dictionary<string, Vector3> POIs = new();
@@ -221,23 +224,38 @@ namespace FortMapper
                 }
             }
 
-            var world_settings = level!.Get<UObject>("WorldSettings");
-            var world_partition = world_settings!.Get<UObject>("WorldPartition");
-            var runtime_hash = world_partition!.Get<UObject>("RuntimeHash");
-            if (runtime_hash!.TryGet<FStructFallback[]>("RuntimeStreamingData", out var runtime_streaming_data)) {
-                // NonSpatiallyLoadedCells?
-                foreach (var cell in runtime_streaming_data[0].Get<UObject[]>("SpatiallyLoadedCells"))
+            if (UseScuffedScan)
+            {
+                foreach (var file in GlobalProvider.Files)
                 {
-                    var level_streaming = cell.Get<UObject>("LevelStreaming");
-                    var wrld = level_streaming.Get<FSoftObjectPath>("WorldAsset").Load<UWorld>();
-                    var lvl = wrld.PersistentLevel.Load<ULevel>();
-                    foreach (var actor in lvl!.Actors)
-                        ParseActor(actor);
+                    if (file.Key.EndsWith(".umap") && file.Key.Contains($"{MapName}/_Generated_/"))
+                    {
+                        level = GlobalProvider.LoadPackageObject<ULevel>(file.Key.Replace(".umap", ".PersistentLevel"));
+                        foreach (var actor in level.Actors)
+                            ParseActor(actor);
+                    }
                 }
             }
-            else if (runtime_hash!.TryGet<FStructFallback[]>("StreamingGrids", out var streaming_grids))
+            else
             {
-                Console.WriteLine("not implemented streaming grids");
+                var world_settings = level!.Get<UObject>("WorldSettings");
+                var world_partition = world_settings!.Get<UObject>("WorldPartition");
+                var runtime_hash = world_partition!.Get<UObject>("RuntimeHash");
+                if (runtime_hash!.TryGet<FStructFallback[]>("RuntimeStreamingData", out var runtime_streaming_data)) {
+                    // NonSpatiallyLoadedCells?
+                    foreach (var cell in runtime_streaming_data[0].Get<UObject[]>("SpatiallyLoadedCells"))
+                    {
+                        var level_streaming = cell.Get<UObject>("LevelStreaming");
+                        var wrld = level_streaming.Get<FSoftObjectPath>("WorldAsset").Load<UWorld>();
+                        var lvl = wrld.PersistentLevel.Load<ULevel>();
+                        foreach (var actor in lvl!.Actors)
+                            ParseActor(actor);
+                    }
+                }
+                else if (runtime_hash!.TryGet<FStructFallback[]>("StreamingGrids", out var streaming_grids))
+                {
+                    Console.WriteLine("not implemented streaming grids");
+                }
             }
 
             return true;
