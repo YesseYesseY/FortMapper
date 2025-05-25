@@ -153,37 +153,36 @@ namespace FortMapper
             ExportUtils.ExportTexture2D(lpc.ItemIcon, iconoutpath);
         }
 
-        public void Export(bool export_icons = false)
+        public void Export(string? custom_name = null)
         {
             Directory.CreateDirectory(Path.Join(OutPath, "Images"));
-            File.WriteAllText(Path.Join(OutPath, "Loot.json"), JsonConvert.SerializeObject(this, JsonFormatting));
-            if (export_icons)
-                foreach (var thing in LPC.Values)
-                    foreach (var thingy in thing)
-                        SaveItemIcon(thingy);
+            File.WriteAllText(Path.Join(OutPath, $"{(custom_name is null ? "Loot" : custom_name)}.json"), JsonConvert.SerializeObject(this, JsonFormatting));
+
+            foreach (var thing in LPC.Values)
+                foreach (var thingy in thing)
+                    SaveItemIcon(thingy);
         }
 
-        public static LootExport Yes(string playlist_path)
+        public static LootExport Parse(UObject playlist)
         {
-            List<(string ltd, string lp)> paths = new();
+            List<(string ltd, string lp)> paths = new()
+            {
+                (playlist.Get<FSoftObjectPath>("LootTierData").AssetPathName.PlainText, playlist.Get<FSoftObjectPath>("LootPackages").AssetPathName.PlainText)
+            };
 
-            var playlist = GlobalProvider.LoadPackageObject<UObject>(playlist_path);
-            paths.Add((playlist.Get<FSoftObjectPath>("LootTierData").AssetPathName.PlainText, playlist.Get<FSoftObjectPath>("LootPackages").AssetPathName.PlainText));
             foreach (var tag in playlist.Get<FGameplayTagContainer>("GameplayTagContainer"))
             {
-                if (GameFeatureStuff.TagLoots.ContainsKey(tag.TagName.Text))
+                foreach (var thingy in GameFeatureStuff.TagLoots.GetValueOrDefault(tag.TagName.Text, new()))
                 {
-                    foreach (var thingy in GameFeatureStuff.TagLoots[tag.TagName.Text])
-                    {
-                        paths.Add((thingy.ltd.AssetPathName.Text, thingy.lp.AssetPathName.Text));
-                    }
+                    paths.Add((thingy.ltd.AssetPathName.Text, thingy.lp.AssetPathName.Text));
                 }
             }
 
-            return Yes(paths);
+            return Parse(paths);
         }
 
-        public static LootExport Yes(params IEnumerable<(string ltd, string lp)> paths)
+        // TODO: Change tuple to FSoftObjectPath or UObject?
+        public static LootExport Parse(params IEnumerable<(string ltd, string lp)> paths)
         {
             var ret = new LootExport();
 

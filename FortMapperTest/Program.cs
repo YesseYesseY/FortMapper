@@ -3,6 +3,7 @@ using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
+using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.UObject;
 using FortMapper;
@@ -185,11 +186,17 @@ LootExport.Hotfixes = @"
 +DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaSupplyDrop_02;Weight;0.400000
 ";
 
-LootExport.Yes(
-    "FortniteGame/Plugins/GameFeatures/BlastBerry/Content/Playlists/Playlist_DashBerrySolo.Playlist_DashBerrySolo"
-    //"FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo"
-    //"FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo"
-).Export(true);
+foreach (var thing in new string[] {
+    "FortniteGame/Plugins/GameFeatures/BlastBerry/Content/Playlists/Playlist_DashBerrySolo.Playlist_DashBerrySolo",
+    "FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo",
+    "FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo"
+})
+{
+    var playlist = GlobalProvider.LoadPackageObject(thing);
+
+    LootExport.Parse(playlist).Export(playlist.Name);
+}
+
 #endif
 
 #if false
@@ -229,3 +236,4 @@ foreach (var thing in new (string, string, string)[]
 }
 Task.WaitAll(tasks);
 #endif
+

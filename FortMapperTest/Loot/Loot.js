@@ -297,16 +297,14 @@ ltd_input.addEventListener("change", (change_event) => {
         case "Loot_AthenaTreasure":
             parse_default(change_event.target.value, [-1, -1, -1, -1, -1, 1]);
             break;
+        case "Loot_AthenaVending":
+            parse_vending(change_event.target.value);
+            break;
         case "Loot_AthenaSupplyDrop":
         case "Loot_AthenaLlama":
         case "Loot_AthenaFloorLoot":
         case "Loot_AthenaFloorLoot_Warmup":
         case "Loot_Golden_Llama":
-            parse_default(change_event.target.value);
-            break;
-        case "Loot_AthenaVending":
-            parse_vending(change_event.target.value);
-            break;
         default:
             parse_default(change_event.target.value);
             break;
