@@ -15,18 +15,38 @@ GameFeatureStuff.Init();
 #if true
 
 LootExport.Hotfixes = @"
++DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaTreasure_02;Weight;0.190000
++DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaFloorLoot_04;Weight;0.65000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaFloorLoot_07;Weight;0.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaTreasure_05;Weight;0.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaTreasure_13;Weight;0.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaSupplyDrop_08;Weight;0.000000
++DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaFloorLoot_08;Weight;0.000000
++DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaTreasure_07;Weight;0.000000
++DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaSupplyDrop_05;Weight;0.000000
++DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaTreasure_07;Weight;0.022000
++DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_ApolloTreasure_Rare_05;Weight;0.150000
++DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaSupplyDrop_02;Weight;0.400000
++DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaTreasure_04;Weight;0.044000
++DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_ApolloTreasure_Rare_04;Weight;0.150000
++DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaSupplyDrop_02;Weight;0.400000
++DataTable=/LootCurrentSeason/DataTables/Rumble/OverrideLootCurrentSeasonLootPackagesData_Rumble;RowUpdate;WorldList.AthenaSupplyDrop.Weapon.Shotgun.101;Weight;0.000000
++DataTable=/LootCurrentSeason/DataTables/Rumble/OverrideLootCurrentSeasonLootPackagesData_Rumble;RowUpdate;WorldList.AthenaSupplyDrop.Weapon.SMG.101;Weight;0.000000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList_Market_ShockGrenade.01;Weight;1.000000
++DataTable=/Game/Items/Datatables/AthenaLootPackages_Client;RowUpdate;WorldList.AthenaAmmoLarge.06;Weight;0.140000
++DataTable=/Game/Items/Datatables/AthenaLootPackages_Client;RowUpdate;WorldList.AthenaAmmoLarge.07;Weight;0.140000
++DataTable=/Game/Items/Datatables/AthenaLootPackages_Client;RowUpdate;WorldList.AthenaLoot.Ammo.06;Weight;0.180000
++DataTable=/Game/Items/Datatables/AthenaLootPackages_Client;RowUpdate;WorldList.AthenaLoot.Ammo.07;Weight;0.180000
++DataTable=/Game/Items/Datatables/AthenaLootPackages_Client;RowUpdate;WorldList.AthenaAmmoSmall.03;Weight;1.500000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.SMG.07;Weight;0.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.SMG.08;Weight;0.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighSMG.09;Weight;0.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighSMG.10;Weight;0.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighSMG.11;Weight;0.000000
-+DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaFloorLoot_08;Weight;0.000000
-+DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaTreasure_07;Weight;0.000000
-+DataTable=/Figment_LootTables/DataTables/FigmentLootTierData;RowUpdate;Loot_AthenaSupplyDrop_05;Weight;0.000000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaHighConsumables.31;Weight;0.330000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaHighConsumablesRare.09;Weight;0.400000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaSupplyDropConsumables.28;Weight;0.400000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaConsumables.40;Weight;0.300000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.Handgun.01;Weight;1.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.Handgun.02;Weight;0.400000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.Handgun.03;Weight;0.070000
@@ -46,13 +66,6 @@ LootExport.Hotfixes = @"
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaSupplyDrop.Weapon.Handgun.06;Weight;0.400000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaHighConsumables.06;Weight;0.000000
 +DataTable=/Figment_LootTables/DataTables/FigmentLootPackages;RowUpdate;WorldList.AthenaConsumables.06;Weight;0.000000
-
-+DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList_Market_ShockGrenade.01;Weight;1.000000
-+DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaHighConsumables.31;Weight;0.330000
-+DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaHighConsumablesRare.09;Weight;0.400000
-+DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaSupplyDropConsumables.28;Weight;0.400000
-+DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaConsumables.40;Weight;0.300000
-+DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.Consumable.Mobility.01;Weight;1.000000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.Weapons.Rarity.Epic.01;Weight;0.500000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.Weapons.Rarity.Epic.02;Weight;0.500000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.Weapons.Rarity.Epic.03;Weight;0.500000
@@ -75,6 +88,14 @@ LootExport.Hotfixes = @"
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.Weapons.Rarity.Legendary.09;Weight;0.500000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.Weapons.Rarity.Legendary.10;Weight;0.500000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.Weapons.Rarity.Legendary.11;Weight;0.500000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.Consumable.Mobility.01;Weight;1.000000
++DataTable=/BlastBerryLoot/DataTables/BlastBerryLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighHandgun.22;Weight;0.000000
++DataTable=/BlastBerryLoot/DataTables/BlastBerryLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighHandgun.23;Weight;0.000000
++DataTable=/BlastBerryLoot/DataTables/BlastBerryLootPackages;RowUpdate;WorldList.ApolloLoot.Weapon.HighHandgun.11;Weight;0.000000
++DataTable=/BlastBerryLoot/DataTables/BlastBerryLootPackages;RowUpdate;WorldList.ApolloLoot.Weapon.HighHandgun.12;Weight;0.000000
++DataTable=/BlastBerryLoot/DataTables/BlastBerryLootPackages;RowUpdate;WorldList.AthenaSupplyDrop.Weapon.Handgun.22;Weight;0.000000
++DataTable=/BlastBerryLoot/DataTables/BlastBerryLootPackages;RowUpdate;WorldList.AthenaSupplyDrop.Weapon.Handgun.23;Weight;0.000000
++DataTable=/BlastBerryLoot/DataTables/BlastBerryLootPackages;RowUpdate;WorldList.AthenaSupplyDropUtility.22;Weight;0.000000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.Rocket.02;Weight;0.070000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighRocket.02;Weight;0.070000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighRocket.03;Weight;0.016000
@@ -123,6 +144,11 @@ LootExport.Hotfixes = @"
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;NPCItemList.Shotgun.Jethro.ChillyHammer.Athena.UC.01;Weight;1.000000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;NPCItemList.Shotgun.Jethro.ChillyHammer.Athena.VR.01;Weight;1.000000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;NPCItemList.Shotgun.Jethro.ChillyHammer.Athena.SR.01;Weight;1.000000
++DataTable=/JethroLoot/DataTables/Comp/JethroLootPackages_Comp;RowUpdate;WorldList.AthenaHighConsumables.02;Weight;0.200000
++DataTable=/JethroLoot/DataTables/Comp/JethroLootPackages_Comp;RowUpdate;WorldList.AthenaHighConsumablesRare.02;Weight;0.200000
++DataTable=/JethroLoot/DataTables/Comp/JethroLootPackages_Comp;RowUpdate;WorldList.AthenaSupplyDropConsumables.02;Weight;0.200000
++DataTable=/JethroLoot/DataTables/Comp/JethroLootPackages_Comp;RowUpdate;WorldList.AthenaConsumables.02;Weight;0.200000
++DataTable=/JethroLoot/DataTables/Comp/JethroLootPackages_Comp;RowUpdate;NPCItemList.Grenade.Jethro.CloudyMuffin.01;Weight;1.000000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.Sniper.02;Weight;0.070000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighSniper.02;Weight;0.070000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaLoot.Weapon.HighSniper.03;Weight;0.016000
@@ -176,20 +202,25 @@ LootExport.Hotfixes = @"
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaHighConsumablesRare.01;Weight;0.250000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaSupplyDropConsumables.01;Weight;0.250000
 +DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaConsumables.01;Weight;0.150000
-+DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaTreasure_02;Weight;0.190000
-+DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaFloorLoot_04;Weight;0.65000000
-+DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaTreasure_07;Weight;0.022000
-+DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_ApolloTreasure_Rare_05;Weight;0.150000
-+DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaSupplyDrop_02;Weight;0.400000
-+DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaTreasure_04;Weight;0.044000
-+DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_ApolloTreasure_Rare_04;Weight;0.150000
-+DataTable=/Game/Items/Datatables/AthenaLootTierData_Client;RowUpdate;Loot_AthenaSupplyDrop_02;Weight;0.400000
++DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaHighConsumables.03;Weight;0.300000
++DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaHighConsumablesRare.03;Weight;0.200000
++DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaSupplyDropConsumables.03;Weight;0.200000
++DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;WorldList.AthenaConsumables.03;Weight;0.300000
++DataTable=/JethroLoot/DataTables/JethroLootPackages;RowUpdate;NPCItemList.Athena.JollyRascal.Galileo.01;Weight;1.000000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaHighConsumables.04;Weight;0.200000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaSupplyDropConsumables.20;Weight;0.300000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaConsumables.46;Weight;0.150000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaHighConsumables.03;Weight;0.180000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaHighConsumablesRare.13;Weight;0.250000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaSupplyDropConsumables.02;Weight;0.250000
++DataTable=/LootCurrentSeason/DataTables/LootCurrentSeasonLootPackages_Client;RowUpdate;WorldList.AthenaConsumables.04;Weight;0.120000
+
 ";
 
 foreach (var thing in new string[] {
     "FortniteGame/Plugins/GameFeatures/BlastBerry/Content/Playlists/Playlist_DashBerrySolo.Playlist_DashBerrySolo",
     "FortniteGame/Plugins/GameFeatures/Figment/FigmentPlaylists/Content/Playlists/Playlist_FigmentNoBuildSolo.Playlist_FigmentNoBuildSolo",
-    "FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo"
+    "FortniteGame/Plugins/GameFeatures/BRPlaylists/Content/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo",
 })
 {
     var playlist = GlobalProvider.LoadPackageObject(thing);
